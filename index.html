@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배당 재투자 계산기 · 똑재TV</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<style>
+  :root {
+    --bg: #F5EFE6;
+    --bg-alt: #EFE7DA;
+    --ink: #1A1A1A;
+    --ink-soft: #4A4A4A;
+    --ink-mute: #8B8276;
+    --accent: #D9542B;
+    --accent-soft: #F4D5C4;
+    --border: #E5DCC8;
+    --white: #FBF7F0;
+    --brown: #8B6F47;
+    --beige-gold: #C4A57B;
+    --dark-warm: #3A2F26;        /* 크림과 어울리는 따뜻한 다크 브라운 */
+    --dark-warm-soft: #5A4A3D;   /* 다크 브라운 보조 */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 32px 24px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* 헤더 */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--dark-warm);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--white);
+    font-weight: 900; font-size: 18px;
+  }
+  .logo-name { font-size: 16px; font-weight: 900; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 10px; color: var(--ink-mute); font-weight: 700; letter-spacing: 1px; }
+
+  /* 히어로 */
+  .hero { text-align: center; margin-bottom: 56px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--white);
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+  }
+  .tag .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+  .hero-title {
+    font-size: 64px; font-weight: 900;
+    letter-spacing: -2.5px; line-height: 1.05;
+    margin-bottom: 24px;
+  }
+  .underline-mark {
+    background: linear-gradient(transparent 60%, var(--accent-soft) 60%);
+    padding: 0 4px;
+  }
+  .hero-desc {
+    font-size: 17px; color: var(--ink-soft);
+    line-height: 1.7; font-weight: 500;
+    max-width: 600px; margin: 0 auto;
+  }
+
+  /* 카드 */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  .step-label {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .step-line { width: 28px; height: 2px; background: var(--accent); }
+  .step-text {
+    font-size: 12px; font-weight: 800;
+    letter-spacing: 1.5px; color: var(--accent);
+  }
+
+  .label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 6px; display: block;
+  }
+
+  input, select {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: inherit; font-size: 15px;
+    color: var(--ink); font-weight: 600;
+    transition: all 0.15s ease;
+    width: 100%;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  select { font-size: 14px; cursor: pointer; }
+  select optgroup {
+    font-weight: 800;
+    color: var(--accent);
+    font-size: 13px;
+    background: var(--bg-alt);
+  }
+  select option {
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--white);
+    padding: 6px;
+  }
+
+  .input-hint {
+    font-size: 12px; color: var(--ink-mute);
+    margin-top: 6px; font-weight: 600;
+  }
+
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  /* 종목 입력 */
+  .holdings-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 24px;
+  }
+  .holdings-summary {
+    font-size: 13px; color: var(--ink-mute);
+    margin-top: 8px; font-weight: 500;
+  }
+  .weight-total { font-weight: 800; color: var(--accent); }
+  .weight-warn { color: #C44; margin-left: 8px; }
+
+  .holding-row {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px; margin-bottom: 12px;
+    transition: all 0.15s ease;
+  }
+  .holding-row:hover { border-color: var(--accent); }
+  .holding-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto;
+    gap: 14px; align-items: end;
+  }
+
+  /* 버튼 */
+  .btn {
+    background: var(--dark-warm);
+    color: var(--white);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:hover { background: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-icon {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    color: var(--ink-mute);
+    transition: all 0.15s ease;
+  }
+  .btn-icon:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn-icon:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* 결과 카드 */
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .stat-card.accent {
+    background: var(--dark-warm);
+    color: var(--white);
+    border-color: var(--dark-warm);
+  }
+  .stat-card.accent .stat-label { color: var(--accent-soft); }
+  .stat-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-size: 28px; font-weight: 900;
+    letter-spacing: -1px; line-height: 1.1;
+  }
+  .stat-sub {
+    font-size: 13px; color: var(--ink-mute);
+    margin-top: 6px; font-weight: 500;
+  }
+  .stat-card.accent .stat-sub { color: var(--accent-soft); }
+
+  /* 차트 */
+  .chart-title {
+    font-size: 18px; font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+  .chart-subtitle {
+    font-size: 13px; color: var(--ink-mute);
+    margin-bottom: 24px; font-weight: 500;
+  }
+  .chart-container {
+    position: relative;
+    height: 340px;
+    width: 100%;
+  }
+  .chart-container.lg { height: 360px; }
+  .chart-container.sm { height: 300px; }
+
+  /* 도넛 차트 그리드 */
+  .donut-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    width: 100%;
+  }
+  .donut-item { 
+    text-align: center; 
+    min-width: 0; /* 그리드 셀 너비 넘침 방지 */
+    overflow: hidden;
+  }
+  .donut-year-label {
+    font-size: 13px; color: var(--ink);
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .donut-canvas-wrap {
+    position: relative;
+    height: 140px;
+    width: 100%;
+    max-width: 160px;
+    margin: 0 auto;
+  }
+  .donut-detail {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .donut-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 6px;
+    background: var(--bg-alt);
+    border-radius: 6px;
+    gap: 4px;
+  }
+  .donut-detail-name {
+    display: flex; align-items: center; gap: 5px;
+    color: var(--ink); font-weight: 700;
+    font-size: 11px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .donut-color-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .donut-detail-value {
+    color: var(--accent); font-weight: 800;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  /* 데이터 테이블 - 줄바뀜 방지가 핵심 */
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 16px;
+    border-radius: 12px;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 1100px; /* 가로 스크롤되어도 줄바뀜 방지 */
+  }
+  .data-table th {
+    background: var(--bg-alt);
+    padding: 12px 10px;
+    text-align: right;
+    font-weight: 700;
+    color: var(--ink-soft);
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    border-bottom: 1.5px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table th:first-child { text-align: center; }
+  .data-table th.group-reinvest {
+    background: var(--accent-soft);
+    color: var(--accent);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .data-table th.group-no-reinvest {
+    background: #E8DFC9;
+    color: var(--brown);
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .data-table td {
+    padding: 11px 10px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap; /* 핵심: 셀 내 텍스트 줄바뀜 금지 */
+  }
+  .data-table td:first-child {
+    text-align: center;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .data-table td.col-reinvest { color: var(--accent); }
+  .data-table td.col-reinvest-emph { color: var(--accent); font-weight: 800; }
+  .data-table td.col-no-reinvest { color: var(--brown); }
+  .data-table td.col-no-reinvest-emph { color: var(--brown); font-weight: 700; }
+  .data-table td.col-gap { color: var(--accent); font-weight: 800; }
+  .data-table tbody tr:hover { background: var(--bg-alt); }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table .highlight-row { background: var(--accent-soft); }
+  .data-table .highlight-row td { font-weight: 800; }
+
+  /* 인사이트 박스 */
+  .insight-box {
+    background: var(--dark-warm);
+    color: var(--white);
+    border-radius: 20px;
+    padding: 36px;
+    margin-bottom: 24px;
+  }
+  .insight-label {
+    display: flex; align-items: center;
+    gap: 8px; margin-bottom: 16px;
+  }
+  .insight-label-text {
+    font-size: 12px; font-weight: 800;
+    letter-spacing: 1.5px;
+    color: var(--accent-soft);
+  }
+  .insight-title {
+    font-size: 24px; font-weight: 900;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+  }
+  .insight-desc {
+    font-size: 15px; line-height: 1.7;
+    color: #D9D2C5; font-weight: 500;
+  }
+  .insight-desc strong { color: var(--white); }
+
+  /* CTA 박스 (insight-box 안의 추가 영역) */
+  .insight-cta {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  .insight-cta-text {
+    font-size: 14px;
+    color: #D9D2C5;
+    font-weight: 600;
+    margin-right: 8px;
+  }
+  .cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    letter-spacing: -0.2px;
+  }
+  .cta-link.primary {
+    background: var(--accent);
+    color: var(--white);
+  }
+  .cta-link.primary:hover {
+    background: #E66740;
+    transform: translateY(-1px);
+  }
+  .cta-link.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .cta-link.secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+  /* 상단 CTA 배너 (히어로 아래) */
+  .top-cta {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .top-cta-text {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .top-cta-text strong { color: var(--ink); font-weight: 800; }
+  .top-cta-links { display: flex; gap: 10px; flex-wrap: wrap; }
+  .top-cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+  }
+  .top-cta-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .top-cta-link.primary {
+    background: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+  }
+  .top-cta-link.primary:hover {
+    background: #E66740;
+    border-color: #E66740;
+    color: var(--white);
+  }
+
+  /* 네이버 N 마크 */
+  .naver-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: #03C75A;
+    color: #FFFFFF;
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    border-radius: 3px;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+
+  /* 푸터 */
+  footer {
+    text-align: center;
+    padding: 40px 0 20px;
+    color: var(--ink-mute);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* 반응형 */
+  @media (max-width: 1100px) {
+    .donut-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (max-width: 768px) {
+    .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr !important; }
+    .grid-4 { grid-template-columns: 1fr 1fr !important; }
+    .holding-grid { grid-template-columns: 1fr 1fr !important; }
+    .hero-title { font-size: 42px !important; }
+    .donut-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+
+  /* 결과 영역 숨김 (초기) */
+  .results-section { display: none; }
+  .results-section.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 헤더 -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">똑</div>
+      <div>
+        <div class="logo-name">똑재TV</div>
+        <div class="logo-sub">DIVIDEND CALCULATOR</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 히어로 -->
+  <div class="hero">
+    <span class="tag">
+      <span class="dot"></span>
+      배당 재투자 시뮬레이터
+    </span>
+    <h1 class="hero-title">
+      여러 종목을 섞으면<br>
+      <span class="underline-mark">진짜로 얼마</span> 받을까?
+    </h1>
+    <p class="hero-desc">
+      배당률·배당성장률·주가성장률을 종목별로 다르게 적용해<br>
+      연차별 자산 누적과 배당금 흐름을 한눈에 보여드립니다.
+    </p>
+  </div>
+
+  <!-- 상단 CTA -->
+  <div class="top-cta">
+    <div class="top-cta-text">
+      💡 <strong>더 깊이 있는 배당 투자 인사이트</strong>가 궁금하신가요? 똑재TV에서 매주 만나보세요.
+    </div>
+    <div class="top-cta-links">
+      <a href="https://www.youtube.com/@ttok_jae" target="_blank" rel="noopener" class="top-cta-link primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        똑재TV 구독하기
+      </a>
+      <a href="https://cafe.naver.com/ttokjae" target="_blank" rel="noopener" class="top-cta-link">
+        <span class="naver-mark">N</span>
+        부의 자유 카페
+      </a>
+    </div>
+  </div>
+
+  <!-- STEP 01: 투자 조건 -->
+  <div class="card">
+    <div class="step-label">
+      <div class="step-line"></div>
+      <span class="step-text">STEP 01 / 투자 조건</span>
+    </div>
+    <div class="grid-3">
+      <div>
+        <label class="label">초기 투자금</label>
+        <input type="number" id="initial" value="10000000" step="1000000">
+        <div class="input-hint" id="initial-hint">1000만원</div>
+      </div>
+      <div>
+        <label class="label">월 적립금</label>
+        <input type="number" id="monthly" value="500000" step="100000">
+        <div class="input-hint" id="monthly-hint">연간 600만원</div>
+      </div>
+      <div>
+        <label class="label">투자 기간</label>
+        <input type="number" id="years" value="20" min="1" max="50">
+        <div class="input-hint" id="years-hint">20년 후 결과</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 02: 포트폴리오 -->
+  <div class="card">
+    <div class="holdings-header">
+      <div>
+        <div class="step-label" style="margin-bottom: 8px;">
+          <div class="step-line"></div>
+          <span class="step-text">STEP 02 / 포트폴리오 구성</span>
+        </div>
+        <div class="holdings-summary">
+          최대 5개 종목 · 비중 합계: <span class="weight-total" id="weight-total">100%</span>
+          <span class="weight-warn" id="weight-warn" style="display:none;">(100%로 맞춰주세요)</span>
+        </div>
+      </div>
+      <button class="btn" id="add-holding-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        종목 추가
+      </button>
+    </div>
+    <div id="holdings-container"></div>
+  </div>
+
+  <!-- 결과 섹션 -->
+  <div class="results-section active" id="results-section">
+
+    <div class="step-label" style="margin-bottom: 20px;">
+      <div class="step-line"></div>
+      <span class="step-text">STEP 03 / 시뮬레이션 결과</span>
+    </div>
+
+    <!-- 결과 카드 4개 -->
+    <div class="grid-4" style="margin-bottom: 24px;">
+      <div class="stat-card accent">
+        <div class="stat-label" id="card1-label">20년 후 자산 (재투자 O)</div>
+        <div class="stat-value" id="card1-value">-</div>
+        <div class="stat-sub" id="card1-sub">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" id="card2-label">20년 후 자산 (재투자 X)</div>
+        <div class="stat-value" id="card2-value" style="color: var(--brown);">-</div>
+        <div class="stat-sub">평가액 + 받아둔 배당</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">재투자 효과 (차이)</div>
+        <div class="stat-value" id="card3-value" style="color: var(--accent);">-</div>
+        <div class="stat-sub" id="card3-sub">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">최종 월배당금 (재투자 O)</div>
+        <div class="stat-value" id="card4-value" style="color: var(--accent);">-</div>
+        <div class="stat-sub" id="card4-sub">-</div>
+      </div>
+    </div>
+
+    <!-- 추가 카드 2개 -->
+    <div class="grid-2" style="margin-bottom: 32px;">
+      <div class="stat-card">
+        <div class="stat-label">누적 투자원금</div>
+        <div class="stat-value" id="card5-value">-</div>
+        <div class="stat-sub">초기 + 매월 적립</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">누적 배당 수령액 (재투자 전 기준)</div>
+        <div class="stat-value" id="card6-value">-</div>
+        <div class="stat-sub">전체 배당 발생액</div>
+      </div>
+    </div>
+
+    <!-- 차트 1: 자산 누적 영역 그래프 -->
+    <div class="card">
+      <div class="chart-title">자산 누적 추이 · 재투자 vs 미재투자</div>
+      <div class="chart-subtitle" id="chart1-subtitle">-</div>
+      <div class="chart-container lg">
+        <canvas id="chart-area"></canvas>
+      </div>
+    </div>
+
+    <!-- 차트 2: 연간 배당금 막대 -->
+    <div class="card">
+      <div class="chart-title">연간 배당금 추이 · 재투자 vs 미재투자</div>
+      <div class="chart-subtitle">재투자한 경우 매년 받는 배당이 가파르게 늘어납니다 (단위: 만원)</div>
+      <div class="chart-container lg">
+        <canvas id="chart-bar"></canvas>
+      </div>
+    </div>
+
+    <!-- 차트 3: 누적 수익률 곡선 -->
+    <div class="card">
+      <div class="chart-title">누적 수익률 곡선 · 재투자 vs 미재투자</div>
+      <div class="chart-subtitle">시간이 갈수록 두 곡선의 격차가 벌어지는 게 복리의 본질입니다</div>
+      <div class="chart-container sm">
+        <canvas id="chart-line"></canvas>
+      </div>
+    </div>
+
+    <!-- 차트 4: 종목별 비중 변화 -->
+    <div class="card">
+      <div class="chart-title">종목별 비중 변화</div>
+      <div class="chart-subtitle">시간이 흐르면서 성장률 차이로 비중이 자연스럽게 달라집니다</div>
+      <div class="donut-grid" id="donut-grid"></div>
+    </div>
+
+    <!-- Raw Data 테이블 -->
+    <div class="card">
+      <div class="chart-title">연차별 Raw Data · 재투자 효과 비교</div>
+      <div class="chart-subtitle">숫자로 보면 복리가 언제부터 폭발하는지 정확히 보입니다 (가로 스크롤)</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="vertical-align: middle;">연차</th>
+              <th rowspan="2" style="vertical-align: middle;">누적 원금</th>
+              <th colspan="3" class="group-reinvest">배당 재투자 O</th>
+              <th colspan="3" class="group-no-reinvest">배당 재투자 X</th>
+              <th rowspan="2" style="vertical-align: middle; color: var(--accent);">차이</th>
+            </tr>
+            <tr>
+              <th class="group-reinvest">평가액</th>
+              <th class="group-reinvest">월 배당</th>
+              <th class="group-reinvest">누적 배당</th>
+              <th class="group-no-reinvest">총 자산</th>
+              <th class="group-no-reinvest">월 배당</th>
+              <th class="group-no-reinvest">누적 배당</th>
+            </tr>
+          </thead>
+          <tbody id="data-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 인사이트 박스 -->
+    <div class="insight-box">
+      <div class="insight-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9542B" stroke-width="2"><path d="M12 3l1.9 5.8L20 10l-4.5 3.3L17 20l-5-3.5L7 20l1.5-6.7L4 10l6.1-1.2L12 3z"/></svg>
+        <span class="insight-label-text">KEY INSIGHT</span>
+      </div>
+      <h3 class="insight-title" id="insight-title">-</h3>
+      <p class="insight-desc" id="insight-desc">-</p>
+
+      <div class="insight-cta">
+        <div class="insight-cta-text">
+          📊 이런 시뮬레이션과 진짜 배당 투자 노하우, 더 알고 싶다면?
+        </div>
+        <a href="https://www.youtube.com/@ttok_jae" target="_blank" rel="noopener" class="cta-link primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          똑재TV 구독하기
+        </a>
+        <a href="https://cafe.naver.com/ttokjae" target="_blank" rel="noopener" class="cta-link secondary">
+          <span class="naver-mark">N</span>
+          부의 자유 카페 가입
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    ※ 본 시뮬레이터는 세금·수수료를 제외한 단순 계산 도구입니다. 실제 투자 결과와는 차이가 있을 수 있습니다.
+  </footer>
+
+</div>
+
+<script>
+// ============================================================
+// 데이터 정의
+// ============================================================
+const PRESETS = {
+  // ===== 미국 ETF =====
+  'SCHD':  { name: 'SCHD',  group: '🇺🇸 미국 ETF', desc: '배당성장 대표',     dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
+  'JEPI':  { name: 'JEPI',  group: '🇺🇸 미국 ETF', desc: '월배당 고배당',     dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
+  'JEPQ':  { name: 'JEPQ',  group: '🇺🇸 미국 ETF', desc: '월배당 나스닥',     dividendYield: 9.5, dividendGrowth: 3.0,  priceGrowth: 6.0 },
+  'VYM':   { name: 'VYM',   group: '🇺🇸 미국 ETF', desc: '안정적 고배당',     dividendYield: 3.0, dividendGrowth: 7.0,  priceGrowth: 7.0 },
+  'VOO':   { name: 'VOO',   group: '🇺🇸 미국 ETF', desc: 'S&P500 (저배당)',   dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
+  'QQQ':   { name: 'QQQ',   group: '🇺🇸 미국 ETF', desc: '나스닥 성장',       dividendYield: 0.6, dividendGrowth: 8.0,  priceGrowth: 12.0 },
+  'O':     { name: 'O',     group: '🇺🇸 미국 ETF', desc: '월배당 리츠',       dividendYield: 5.5, dividendGrowth: 4.0,  priceGrowth: 3.0 },
+  'KO':    { name: 'KO',    group: '🇺🇸 미국 ETF', desc: '코카콜라 (배당킹)', dividendYield: 3.1, dividendGrowth: 5.0,  priceGrowth: 6.0 },
+
+  // ===== 국내 월배당 ETF (시가총액 상위 + 월분배 지급) =====
+  'TIGER미국배당다우존스':         { name: 'TIGER 미국배당다우존스',         group: '🇰🇷 국내 월배당 ETF', desc: '한국판 SCHD · 배당성장형',     dividendYield: 3.2, dividendGrowth: 9.0,  priceGrowth: 8.0 },
+  'KODEX미국배당커버드콜액티브':   { name: 'KODEX 미국배당커버드콜액티브',   group: '🇰🇷 국내 월배당 ETF', desc: '미국 우량주 + 커버드콜',       dividendYield: 9.4, dividendGrowth: 1.5,  priceGrowth: 4.5 },
+  'TIGER미국배당다우존스타겟2호': { name: 'TIGER 미국배당다우존스타겟CC2호',group: '🇰🇷 국내 월배당 ETF', desc: 'SCHD + 커버드콜 결합',         dividendYield: 11.6, dividendGrowth: 1.0, priceGrowth: 4.0 },
+  'KODEX200타겟위클리':           { name: 'KODEX 200타겟위클리CC',          group: '🇰🇷 국내 월배당 ETF', desc: '코스피200 위클리 옵션',        dividendYield: 12.0, dividendGrowth: 0.5, priceGrowth: 3.0 },
+  'KODEX미국나스닥100CC':         { name: 'KODEX 미국나스닥100데일리CC',    group: '🇰🇷 국내 월배당 ETF', desc: '나스닥 + 커버드콜 (고배당)',   dividendYield: 19.7, dividendGrowth: 0.0, priceGrowth: 1.5 },
+  'RISE미국테크100CC':            { name: 'RISE 미국테크100데일리CC',       group: '🇰🇷 국내 월배당 ETF', desc: '테크주 + 커버드콜 (초고배당)', dividendYield: 20.7, dividendGrowth: 0.0, priceGrowth: 0.5 },
+  'SOL미국30년국채CC':            { name: 'SOL 미국30년국채CC',             group: '🇰🇷 국내 월배당 ETF', desc: '국채 + 커버드콜',              dividendYield: 10.1, dividendGrowth: 0.5, priceGrowth: 2.0 },
+  'TIGER미국나스닥100CC':         { name: 'TIGER 미국나스닥100CC(합성)',    group: '🇰🇷 국내 월배당 ETF', desc: '나스닥 + 커버드콜 (스테디)',   dividendYield: 11.3, dividendGrowth: 0.5, priceGrowth: 3.0 },
+  'PLUS고배당주위클리':           { name: 'PLUS 고배당주위클리CC',          group: '🇰🇷 국내 월배당 ETF', desc: '국내 고배당 + 위클리 옵션',    dividendYield: 13.7, dividendGrowth: 1.0, priceGrowth: 3.5 },
+  'SOL팔란티어CC혼합':            { name: 'SOL 팔란티어CC OTM채권혼합',     group: '🇰🇷 국내 월배당 ETF', desc: 'IRP 100% 가능 (퇴직연금)',     dividendYield: 26.2, dividendGrowth: 0.0, priceGrowth: 0.0 },
+
+  '커스텀': { name: '커스텀', group: '⚙️ 직접 입력', desc: '내 종목 직접 입력', dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 },
+};
+
+const CHART_COLORS = ['#D9542B', '#E89A6F', '#8B6F47', '#C4A57B', '#5A6B5A'];
+
+// 상태
+let holdings = [
+  { id: 1, preset: 'SCHD', weight: 50, dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
+  { id: 2, preset: 'JEPI', weight: 30, dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
+  { id: 3, preset: 'VOO',  weight: 20, dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
+];
+
+// Chart.js 인스턴스 보관
+let chartArea = null, chartBar = null, chartLine = null;
+let donutCharts = [];
+
+// ============================================================
+// 포맷팅
+// ============================================================
+function formatKRW(n) {
+  if (n >= 100000000) return (n / 100000000).toFixed(2) + '억';
+  if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만';
+  return Math.round(n).toLocaleString();
+}
+function formatKRWFull(n) {
+  return Math.round(n).toLocaleString() + '원';
+}
+// 테이블용 짧은 포맷 (만원 단위로 통일해서 줄바뀜 방지)
+function formatKRWTable(n) {
+  if (n >= 100000000) return (n / 100000000).toFixed(2) + '억';
+  if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만';
+  if (n >= 1000) return Math.round(n).toLocaleString();
+  return Math.round(n).toLocaleString();
+}
+
+// ============================================================
+// 종목 입력 렌더링
+// ============================================================
+function renderHoldings() {
+  const container = document.getElementById('holdings-container');
+  container.innerHTML = '';
+  holdings.forEach((h) => {
+    const row = document.createElement('div');
+    row.className = 'holding-row';
+
+    // 그룹별로 묶어서 optgroup 생성
+    const grouped = {};
+    Object.entries(PRESETS).forEach(([key, p]) => {
+      const groupName = p.group || '기타';
+      if (!grouped[groupName]) grouped[groupName] = [];
+      grouped[groupName].push({ key, p });
+    });
+
+    let presetOptions = '';
+    Object.entries(grouped).forEach(([groupName, items]) => {
+      presetOptions += `<optgroup label="${groupName}">`;
+      items.forEach(({ key, p }) => {
+        const sel = h.preset === key ? 'selected' : '';
+        presetOptions += `<option value="${key}" ${sel}>${p.name} · ${p.desc}</option>`;
+      });
+      presetOptions += `</optgroup>`;
+    });
+
+    row.innerHTML = `
+      <div class="holding-grid">
+        <div>
+          <label class="label">종목 / 프리셋</label>
+          <select data-id="${h.id}" data-field="preset">${presetOptions}</select>
+        </div>
+        <div>
+          <label class="label">비중 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="weight" value="${h.weight}" min="0" max="100">
+        </div>
+        <div>
+          <label class="label">배당률 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="dividendYield" value="${h.dividendYield}" step="0.1">
+        </div>
+        <div>
+          <label class="label">배당성장 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="dividendGrowth" value="${h.dividendGrowth}" step="0.5">
+        </div>
+        <div>
+          <label class="label">주가성장 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="priceGrowth" value="${h.priceGrowth}" step="0.5">
+        </div>
+        <button class="btn-icon" data-remove="${h.id}" ${holdings.length <= 1 ? 'disabled' : ''}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  // 비중 합계 업데이트
+  const total = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
+  document.getElementById('weight-total').textContent = total + '%';
+  document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
+  document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
+
+  // 추가 버튼 활성화
+  document.getElementById('add-holding-btn').disabled = holdings.length >= 5;
+
+  // 이벤트 바인딩
+  container.querySelectorAll('select, input').forEach(el => {
+    el.addEventListener('input', handleHoldingChange);
+    el.addEventListener('change', handleHoldingChange);
+  });
+  container.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = Number(e.currentTarget.dataset.remove);
+      if (holdings.length > 1) {
+        holdings = holdings.filter(h => h.id !== id);
+        renderHoldings();
+        update();
+      }
+    });
+  });
+}
+
+function handleHoldingChange(e) {
+  const id = Number(e.target.dataset.id);
+  const field = e.target.dataset.field;
+  const value = e.target.value;
+  const h = holdings.find(x => x.id === id);
+  if (!h) return;
+  if (field === 'preset') {
+    const p = PRESETS[value];
+    h.preset = value;
+    h.dividendYield = p.dividendYield;
+    h.dividendGrowth = p.dividendGrowth;
+    h.priceGrowth = p.priceGrowth;
+    renderHoldings(); // 프리셋 바뀌면 입력값도 업데이트해야 하니 다시 렌더
+  } else {
+    h[field] = Number(value);
+    if (field === 'weight') {
+      // 비중만 변경한 경우 재렌더 안 하고 합계만 업데이트
+      const total = holdings.reduce((s, x) => s + Number(x.weight || 0), 0);
+      document.getElementById('weight-total').textContent = total + '%';
+      document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
+      document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
+    }
+  }
+  update();
+}
+
+// 종목 추가
+document.getElementById('add-holding-btn').addEventListener('click', () => {
+  if (holdings.length >= 5) return;
+  const newId = Math.max(...holdings.map(h => h.id)) + 1;
+  holdings.push({ id: newId, preset: '커스텀', weight: 0, dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 });
+  renderHoldings();
+  update();
+});
+
+// ============================================================
+// 시뮬레이션
+// ============================================================
+function simulate() {
+  const initial = Number(document.getElementById('initial').value) || 0;
+  const monthly = Number(document.getElementById('monthly').value) || 0;
+  const years = Math.max(1, Math.min(50, Number(document.getElementById('years').value) || 1));
+  const totalWeight = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
+
+  if (totalWeight === 0) return null;
+
+  // 재투자 O
+  const stockStates = holdings.map(h => ({
+    name: PRESETS[h.preset]?.name || '커스텀',
+    principal: 0, value: 0,
+    yieldRate: h.dividendYield / 100,
+    growth: h.dividendGrowth / 100,
+    priceGrowth: h.priceGrowth / 100,
+    weight: h.weight / totalWeight,
+    yearlyDividend: 0, cumulativeDividend: 0,
+  }));
+  // 재투자 X
+  const noReStates = holdings.map(h => ({
+    name: PRESETS[h.preset]?.name || '커스텀',
+    principal: 0, value: 0, cashDividends: 0,
+    yieldRate: h.dividendYield / 100,
+    growth: h.dividendGrowth / 100,
+    priceGrowth: h.priceGrowth / 100,
+    weight: h.weight / totalWeight,
+    yearlyDividend: 0,
+  }));
+
+  stockStates.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
+  noReStates.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
+
+  const yearlyData = [];
+  const annualContribution = monthly * 12;
+
+  for (let year = 1; year <= years; year++) {
+    // === 재투자 O ===
+    stockStates.forEach(s => {
+      const c = annualContribution * s.weight;
+      s.principal += c; s.value += c;
+    });
+    stockStates.forEach(s => { s.value *= (1 + s.priceGrowth); });
+    stockStates.forEach(s => {
+      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
+      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
+      s.yearlyDividend = div;
+      s.cumulativeDividend += div;
+      s.value += div;
+    });
+
+    // === 재투자 X ===
+    noReStates.forEach(s => {
+      const c = annualContribution * s.weight;
+      s.principal += c; s.value += c;
+    });
+    noReStates.forEach(s => { s.value *= (1 + s.priceGrowth); });
+    noReStates.forEach(s => {
+      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
+      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
+      s.yearlyDividend = div;
+      s.cashDividends += div;
+    });
+
+    const totalValue = stockStates.reduce((sum, s) => sum + s.value, 0);
+    const totalPrincipal = stockStates.reduce((sum, s) => sum + s.principal, 0);
+    const totalDividend = stockStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
+    const totalCumDiv = stockStates.reduce((sum, s) => sum + s.cumulativeDividend, 0);
+
+    const noReValue = noReStates.reduce((sum, s) => sum + s.value, 0);
+    const noReCash = noReStates.reduce((sum, s) => sum + s.cashDividends, 0);
+    const noReTotal = noReValue + noReCash;
+    const noReYearlyDiv = noReStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
+
+    const row = {
+      year,
+      totalValue: Math.round(totalValue),
+      totalPrincipal: Math.round(totalPrincipal),
+      profit: Math.round(totalValue - totalPrincipal),
+      yearlyDividend: Math.round(totalDividend),
+      monthlyDividend: Math.round(totalDividend / 12),
+      cumulativeDividend: Math.round(totalCumDiv),
+      returnRate: parseFloat(((totalValue / totalPrincipal - 1) * 100).toFixed(1)),
+      noReinvestTotal: Math.round(noReTotal),
+      noReinvestCash: Math.round(noReCash),
+      noReinvestYearlyDiv: Math.round(noReYearlyDiv),
+      noReinvestMonthlyDiv: Math.round(noReYearlyDiv / 12),
+      noReinvestReturnRate: parseFloat(((noReTotal / totalPrincipal - 1) * 100).toFixed(1)),
+      reinvestGap: Math.round(totalValue - noReTotal),
+      stockWeights: stockStates.map(s => ({
+        name: s.name,
+        weight: parseFloat(((s.value / totalValue) * 100).toFixed(1))
+      })),
+    };
+    yearlyData.push(row);
+  }
+
+  const finalYear = yearlyData[yearlyData.length - 1];
+  const summary = {
+    finalValue: finalYear.totalValue,
+    totalPrincipal: finalYear.totalPrincipal,
+    profit: finalYear.profit,
+    multiplier: (finalYear.totalValue / finalYear.totalPrincipal).toFixed(2),
+    finalMonthlyDividend: finalYear.monthlyDividend,
+    cumulativeDividend: finalYear.cumulativeDividend,
+    noReinvestTotal: finalYear.noReinvestTotal,
+    noReinvestMonthlyDiv: finalYear.noReinvestMonthlyDiv,
+    reinvestGap: finalYear.reinvestGap,
+    reinvestGapPercent: ((finalYear.totalValue / finalYear.noReinvestTotal - 1) * 100).toFixed(1),
+  };
+
+  return { yearlyData, summary, years, initial, monthly };
+}
+
+// ============================================================
+// 차트 렌더링
+// ============================================================
+const chartCommonOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      labels: {
+        font: { family: 'Pretendard', size: 13, weight: 600 },
+        color: '#1A1A1A',
+        usePointStyle: true,
+        padding: 16,
+      }
+    },
+    tooltip: {
+      backgroundColor: '#FBF7F0',
+      titleColor: '#1A1A1A',
+      bodyColor: '#4A4A4A',
+      borderColor: '#E5DCC8',
+      borderWidth: 1.5,
+      padding: 12,
+      titleFont: { family: 'Pretendard', size: 13, weight: 700 },
+      bodyFont: { family: 'Pretendard', size: 13, weight: 600 },
+    }
+  }
+};
+
+function renderAreaChart(data) {
+  if (chartArea) chartArea.destroy();
+  const ctx = document.getElementById('chart-area').getContext('2d');
+  
+  // 그라데이션
+  const gradAccent = ctx.createLinearGradient(0, 0, 0, 360);
+  gradAccent.addColorStop(0, 'rgba(217, 84, 43, 0.4)');
+  gradAccent.addColorStop(1, 'rgba(217, 84, 43, 0.05)');
+  
+  const gradBrown = ctx.createLinearGradient(0, 0, 0, 360);
+  gradBrown.addColorStop(0, 'rgba(139, 111, 71, 0.3)');
+  gradBrown.addColorStop(1, 'rgba(139, 111, 71, 0.05)');
+  
+  const gradInk = ctx.createLinearGradient(0, 0, 0, 360);
+  gradInk.addColorStop(0, 'rgba(74, 74, 74, 0.2)');
+  gradInk.addColorStop(1, 'rgba(74, 74, 74, 0.03)');
+
+  chartArea = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.yearlyData.map(d => d.year + '년'),
+      datasets: [
+        {
+          label: '누적 원금',
+          data: data.yearlyData.map(d => d.totalPrincipal),
+          borderColor: '#4A4A4A',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          backgroundColor: gradInk,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+        },
+        {
+          label: '배당 재투자 X',
+          data: data.yearlyData.map(d => d.noReinvestTotal),
+          borderColor: '#8B6F47',
+          borderWidth: 2.5,
+          backgroundColor: gradBrown,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        },
+        {
+          label: '배당 재투자 O',
+          data: data.yearlyData.map(d => d.totalValue),
+          borderColor: '#D9542B',
+          borderWidth: 3,
+          backgroundColor: gradAccent,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+        }
+      ]
+    },
+    options: {
+      ...chartCommonOptions,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Pretendard', size: 12, weight: 600 }, color: '#8B8276' }
+        },
+        y: {
+          grid: { color: '#E5DCC8', borderDash: [3, 3] },
+          ticks: {
+            font: { family: 'Pretendard', size: 12, weight: 600 },
+            color: '#8B8276',
+            callback: (v) => formatKRW(v)
+          }
+        }
+      },
+      plugins: {
+        ...chartCommonOptions.plugins,
+        tooltip: {
+          ...chartCommonOptions.plugins.tooltip,
+          callbacks: {
+            label: (ctx) => ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderBarChart(data) {
+  if (chartBar) chartBar.destroy();
+  const ctx = document.getElementById('chart-bar').getContext('2d');
+  const showLabels = data.years <= 25;
+
+  chartBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.yearlyData.map(d => d.year + '년'),
+      datasets: [
+        {
+          label: '배당 재투자 X',
+          data: data.yearlyData.map(d => d.noReinvestYearlyDiv),
+          backgroundColor: '#C4A57B',
+          borderRadius: 4,
+          datalabels: showLabels ? {
+            anchor: 'end',
+            align: 'top',
+            color: '#8B6F47',
+            font: { family: 'Pretendard', size: 9, weight: 700 },
+            formatter: (v) => formatKRW(v),
+          } : { display: false }
+        },
+        {
+          label: '배당 재투자 O',
+          data: data.yearlyData.map(d => d.yearlyDividend),
+          backgroundColor: '#D9542B',
+          borderRadius: 4,
+          datalabels: showLabels ? {
+            anchor: 'end',
+            align: 'top',
+            color: '#D9542B',
+            font: { family: 'Pretendard', size: 9, weight: 700 },
+            formatter: (v) => formatKRW(v),
+          } : { display: false }
+        }
+      ]
+    },
+    options: {
+      ...chartCommonOptions,
+      layout: { padding: { top: 30 } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Pretendard', size: 12, weight: 600 }, color: '#8B8276' }
+        },
+        y: {
+          grid: { color: '#E5DCC8', borderDash: [3, 3] },
+          ticks: {
+            font: { family: 'Pretendard', size: 12, weight: 600 },
+            color: '#8B8276',
+            callback: (v) => formatKRW(v)
+          }
+        }
+      },
+      plugins: {
+        ...chartCommonOptions.plugins,
+        tooltip: {
+          ...chartCommonOptions.plugins.tooltip,
+          callbacks: {
+            label: (ctx) => ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
+function renderLineChart(data) {
+  if (chartLine) chartLine.destroy();
+  const ctx = document.getElementById('chart-line').getContext('2d');
+
+  chartLine = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.yearlyData.map(d => d.year + '년'),
+      datasets: [
+        {
+          label: '배당 재투자 X',
+          data: data.yearlyData.map(d => d.noReinvestReturnRate),
+          borderColor: '#8B6F47',
+          backgroundColor: '#8B6F47',
+          borderWidth: 2.5,
+          borderDash: [6, 4],
+          tension: 0.3,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
+          fill: false,
+        },
+        {
+          label: '배당 재투자 O',
+          data: data.yearlyData.map(d => d.returnRate),
+          borderColor: '#D9542B',
+          backgroundColor: '#D9542B',
+          borderWidth: 3,
+          tension: 0.3,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      ...chartCommonOptions,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Pretendard', size: 12, weight: 600 }, color: '#8B8276' }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#E5DCC8', borderDash: [3, 3] },
+          ticks: {
+            font: { family: 'Pretendard', size: 12, weight: 600 },
+            color: '#8B8276',
+            callback: (v) => v + '%'
+          }
+        }
+      },
+      plugins: {
+        ...chartCommonOptions.plugins,
+        tooltip: {
+          ...chartCommonOptions.plugins.tooltip,
+          callbacks: {
+            label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y + '%'
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDonutCharts(data) {
+  // 기존 차트 모두 제거
+  donutCharts.forEach(c => c.destroy());
+  donutCharts = [];
+
+  const grid = document.getElementById('donut-grid');
+  grid.innerHTML = '';
+
+  const years = data.years;
+  // 5개 시점: 1년, 1/4, 1/2, 3/4, 마지막
+  let checkpoints = [1, Math.ceil(years / 4), Math.ceil(years / 2), Math.ceil(years * 3 / 4), years];
+  checkpoints = [...new Set(checkpoints)].filter(y => y <= years).sort((a, b) => a - b);
+
+  // 그리드 컬럼은 CSS에서 처리 (5개 고정, 반응형은 미디어쿼리)
+  // 다만 체크포인트가 5개 미만일 경우만 조정
+  if (checkpoints.length < 5) {
+    grid.style.gridTemplateColumns = `repeat(${checkpoints.length}, 1fr)`;
+  } else {
+    grid.style.gridTemplateColumns = '';
+  }
+
+  checkpoints.forEach((year, idx) => {
+    const yearData = data.yearlyData.find(d => d.year === year);
+    if (!yearData) return;
+
+    const item = document.createElement('div');
+    item.className = 'donut-item';
+    
+    const canvasId = `donut-${idx}`;
+    let detailHtml = '';
+    yearData.stockWeights.forEach((sw, i) => {
+      const color = CHART_COLORS[i % CHART_COLORS.length];
+      detailHtml += `
+        <div class="donut-detail-row">
+          <span class="donut-detail-name">
+            <span class="donut-color-dot" style="background: ${color};"></span>
+            ${sw.name}
+          </span>
+          <span class="donut-detail-value">${sw.weight}%</span>
+        </div>
+      `;
+    });
+
+    item.innerHTML = `
+      <div class="donut-year-label">${year}년차</div>
+      <div class="donut-canvas-wrap">
+        <canvas id="${canvasId}"></canvas>
+      </div>
+      <div class="donut-detail">${detailHtml}</div>
+    `;
+    grid.appendChild(item);
+
+    // 도넛 차트 생성 - 색상 명시적 지정
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    const colors = yearData.stockWeights.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+    
+    const chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: yearData.stockWeights.map(sw => sw.name),
+        datasets: [{
+          data: yearData.stockWeights.map(sw => sw.weight),
+          backgroundColor: colors,
+          borderColor: '#FBF7F0',
+          borderWidth: 2,
+          hoverOffset: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '45%',
+        layout: {
+          padding: 4
+        },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            color: '#FFFFFF',
+            font: { family: 'Pretendard', size: 11, weight: 800 },
+            anchor: 'center',
+            align: 'center',
+            textAlign: 'center',
+            formatter: (v) => v >= 5 ? v + '%' : '',
+            textShadowBlur: 2,
+            textShadowColor: 'rgba(0,0,0,0.25)',
+          },
+          tooltip: {
+            backgroundColor: '#FBF7F0',
+            titleColor: '#1A1A1A',
+            bodyColor: '#4A4A4A',
+            borderColor: '#E5DCC8',
+            borderWidth: 1.5,
+            padding: 10,
+            titleFont: { family: 'Pretendard', size: 12, weight: 700 },
+            bodyFont: { family: 'Pretendard', size: 12, weight: 600 },
+            callbacks: {
+              label: (ctx) => ctx.label + ': ' + ctx.parsed + '%'
+            }
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+    donutCharts.push(chart);
+  });
+}
+
+// ============================================================
+// 결과 카드 / 테이블 / 인사이트 업데이트
+// ============================================================
+function renderResults(data) {
+  const s = data.summary;
+  const years = data.years;
+
+  // 카드들
+  document.getElementById('card1-label').textContent = `${years}년 후 자산 (재투자 O)`;
+  document.getElementById('card1-value').textContent = formatKRW(s.finalValue);
+  document.getElementById('card1-sub').textContent = `원금의 ${s.multiplier}배`;
+
+  document.getElementById('card2-label').textContent = `${years}년 후 자산 (재투자 X)`;
+  document.getElementById('card2-value').textContent = formatKRW(s.noReinvestTotal);
+
+  document.getElementById('card3-value').textContent = '+' + formatKRW(s.reinvestGap);
+  document.getElementById('card3-sub').textContent = `${s.reinvestGapPercent}% 더 많음`;
+
+  document.getElementById('card4-value').textContent = formatKRW(s.finalMonthlyDividend);
+  document.getElementById('card4-sub').textContent = `미재투자 시: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+
+  document.getElementById('card5-value').textContent = formatKRW(s.totalPrincipal);
+  document.getElementById('card6-value').textContent = formatKRW(s.cumulativeDividend);
+
+  // 차트 1 부제목
+  document.getElementById('chart1-subtitle').innerHTML = 
+    `같은 종목 같은 금액인데 배당 재투자 여부에 따라 <strong style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</strong> 차이가 납니다 (${s.reinvestGapPercent}% 더 많음)`;
+
+  // 테이블
+  const tbody = document.getElementById('data-table-body');
+  tbody.innerHTML = '';
+  data.yearlyData.forEach(row => {
+    const isFinal = row.year === years;
+    const tr = document.createElement('tr');
+    if (isFinal) tr.className = 'highlight-row';
+    tr.innerHTML = `
+      <td>${row.year}년</td>
+      <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
+      <td class="col-reinvest-emph">${formatKRWTable(row.totalValue)}</td>
+      <td class="col-reinvest">${formatKRWTable(row.monthlyDividend)}</td>
+      <td class="col-reinvest">${formatKRWTable(row.cumulativeDividend)}</td>
+      <td class="col-no-reinvest-emph">${formatKRWTable(row.noReinvestTotal)}</td>
+      <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDiv)}</td>
+      <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCash)}</td>
+      <td class="col-gap">+${formatKRW(row.reinvestGap)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // 인사이트
+  document.getElementById('insight-title').innerHTML = 
+    `${years}년 후, 배당 재투자 한 사람과 안 한 사람의 차이는 <span style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</span>`;
+  document.getElementById('insight-desc').innerHTML = 
+    `초기 ${formatKRW(data.initial)}원 + 월 ${formatKRW(data.monthly)}원 적립으로 시작했을 때, ` +
+    `재투자한 사람은 <strong>${formatKRW(s.finalValue)}원</strong> · 월 배당 <strong style="color: var(--accent);">${formatKRW(s.finalMonthlyDividend)}원</strong>, ` +
+    `재투자하지 않은 사람은 <strong style="color: #C4A57B;">${formatKRW(s.noReinvestTotal)}원</strong> · 월 배당 <strong style="color: #C4A57B;">${formatKRW(s.noReinvestMonthlyDiv)}원</strong>입니다. ` +
+    `같은 종목 같은 금액을 사도, 들어오는 배당을 다시 투자하느냐 마느냐가 <strong>${s.reinvestGapPercent}%의 격차</strong>를 만듭니다.`;
+}
+
+// ============================================================
+// 메인 업데이트
+// ============================================================
+function update() {
+  const initial = Number(document.getElementById('initial').value) || 0;
+  const monthly = Number(document.getElementById('monthly').value) || 0;
+  const years = Number(document.getElementById('years').value) || 1;
+
+  document.getElementById('initial-hint').textContent = formatKRW(initial) + '원';
+  document.getElementById('monthly-hint').textContent = '연간 ' + formatKRW(monthly * 12) + '원';
+  document.getElementById('years-hint').textContent = years + '년 후 결과';
+
+  const data = simulate();
+  if (!data) return;
+
+  renderResults(data);
+  renderAreaChart(data);
+  renderBarChart(data);
+  renderLineChart(data);
+  renderDonutCharts(data);
+}
+
+// 입력 이벤트
+['initial', 'monthly', 'years'].forEach(id => {
+  document.getElementById(id).addEventListener('input', update);
+});
+
+// 초기화
+renderHoldings();
+update();
+</script>
+</body>
+</html>
