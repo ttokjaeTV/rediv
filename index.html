@@ -317,12 +317,41 @@
     border-radius: 16px;
     padding: 24px;
   }
+
+  /* 카드 그룹 라벨 */
+  .card-group-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .card-group-tag {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .card-group-desc {
+    font-size: 13px;
+    color: var(--ink-mute);
+    font-weight: 600;
+  }
   .stat-card.accent {
     background: var(--dark-warm);
     color: var(--white);
     border-color: var(--dark-warm);
   }
   .stat-card.accent .stat-label { color: var(--accent-soft); }
+  .stat-card.accent-green {
+    background: #4A5A4A !important;
+    color: var(--white);
+    border-color: #4A5A4A !important;
+  }
+  .stat-card.accent-green .stat-label { color: #B8C4B8 !important; }
+  .stat-card.accent-green .stat-value { color: var(--white) !important; }
+  .stat-card.accent-green .stat-sub { color: #B8C4B8 !important; }
   .stat-label {
     font-size: 11px; font-weight: 700;
     letter-spacing: 1px; color: var(--ink-mute);
@@ -962,7 +991,11 @@
       <span class="step-text">STEP 03 / 시뮬레이션 결과</span>
     </div>
 
-    <!-- 결과 카드 4개 -->
+    <!-- 결과 카드 - 명목가치 (세전) -->
+    <div class="card-group-label">
+      <span class="card-group-tag" style="background: var(--accent); color: var(--white);">명목가치 (세전)</span>
+      <span class="card-group-desc">미래 시점에서 보이는 그대로의 금액</span>
+    </div>
     <div class="grid-4" style="margin-bottom: 24px;">
       <div class="stat-card accent">
         <div class="stat-label" id="card1-label">20년 후 자산 (재투자 O)</div>
@@ -972,7 +1005,7 @@
       <div class="stat-card">
         <div class="stat-label" id="card2-label">20년 후 자산 (재투자 X)</div>
         <div class="stat-value" id="card2-value" style="color: var(--brown);">-</div>
-        <div class="stat-sub">평가액 + 받아둔 배당</div>
+        <div class="stat-sub">총 자산 (배당 받아둠)</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">재투자 효과 (차이)</div>
@@ -986,7 +1019,37 @@
       </div>
     </div>
 
-    <!-- 추가 카드 2개 -->
+    <!-- 결과 카드 - 실질가치 (물가 반영) - 물가 ON일 때만 표시 -->
+    <div id="real-cards-section" style="display: none;">
+      <div class="card-group-label">
+        <span class="card-group-tag" style="background: #5A6B5A; color: var(--white);">실질가치 (물가 반영)</span>
+        <span class="card-group-desc" id="real-card-desc">오늘 돈 가치 기준 환산 금액</span>
+      </div>
+      <div class="grid-4" style="margin-bottom: 24px;">
+        <div class="stat-card accent-green">
+          <div class="stat-label" id="rcard1-label">20년 후 자산 (재투자 O · 실질)</div>
+          <div class="stat-value" id="rcard1-value">-</div>
+          <div class="stat-sub" id="rcard1-sub">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label" id="rcard2-label">20년 후 자산 (재투자 X · 실질)</div>
+          <div class="stat-value" id="rcard2-value" style="color: #5A4A3D;">-</div>
+          <div class="stat-sub" id="rcard2-sub">오늘 돈 가치</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">물가 손실분</div>
+          <div class="stat-value" id="rcard3-value" style="color: #5A6B5A;">-</div>
+          <div class="stat-sub" id="rcard3-sub">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">최종 월배당금 (실질)</div>
+          <div class="stat-value" id="rcard4-value" style="color: #5A6B5A;">-</div>
+          <div class="stat-sub" id="rcard4-sub">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기본 정보 카드 -->
     <div class="grid-2" style="margin-bottom: 32px;">
       <div class="stat-card">
         <div class="stat-label">누적 투자원금</div>
@@ -1038,14 +1101,17 @@
 
     <!-- 차트 4: 종목별 비중 변화 -->
     <div class="card">
-      <div class="chart-title">종목별 비중 변화</div>
-      <div class="chart-subtitle">시간이 흐르면서 성장률 차이로 비중이 자연스럽게 달라집니다</div>
+      <div class="chart-title">종목별 총 자산 비중 변화</div>
+      <div class="chart-subtitle">
+        매년 적립금이 설정한 초기 비중대로 들어가기 때문에 큰 변화는 없지만, 
+        <strong style="color: var(--accent);">배당성장 + 재투자 효과</strong>가 큰 종목은 비중이 조금씩 늘어납니다
+      </div>
       <div class="donut-grid" id="donut-grid"></div>
     </div>
 
-    <!-- Raw Data 테이블 -->
+    <!-- Raw Data 테이블 (세전) -->
     <div class="card">
-      <div class="chart-title">연차별 Raw Data · 재투자 효과 비교</div>
+      <div class="chart-title">연차별 Raw Data <span style="color: var(--accent); font-weight: 800;">(세전)</span> · 재투자 효과 비교</div>
       <div class="chart-subtitle">숫자로 보면 복리가 언제부터 폭발하는지 정확히 보입니다 (가로 스크롤)</div>
       <div class="table-wrap">
         <table class="data-table">
@@ -1055,10 +1121,10 @@
               <th rowspan="2" style="vertical-align: middle;">누적 원금</th>
               <th colspan="3" class="group-reinvest">배당 재투자 O</th>
               <th colspan="3" class="group-no-reinvest">배당 재투자 X</th>
-              <th rowspan="2" style="vertical-align: middle; color: var(--accent);">차이</th>
+              <th rowspan="2" style="vertical-align: middle; color: var(--accent);">총자산 차이</th>
             </tr>
             <tr>
-              <th class="group-reinvest">평가액</th>
+              <th class="group-reinvest">총 자산</th>
               <th class="group-reinvest">월 배당</th>
               <th class="group-reinvest">누적 배당</th>
               <th class="group-no-reinvest">총 자산</th>
@@ -1067,6 +1133,37 @@
             </tr>
           </thead>
           <tbody id="data-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Raw Data 테이블 (세후) -->
+    <div class="card">
+      <div class="chart-title">연차별 Raw Data <span style="color: var(--brown); font-weight: 800;">(세후 · 배당소득세 15% 반영)</span></div>
+      <div class="chart-subtitle">
+        배당받을 때마다 매년 15%를 세금으로 차감하고 남은 금액만 재투자한 결과입니다. 
+        <strong style="color: var(--accent);">절세계좌(ISA·연금저축·IRP)</strong>를 활용하면 이 차이를 크게 줄일 수 있습니다.
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="vertical-align: middle;">연차</th>
+              <th rowspan="2" style="vertical-align: middle;">누적 원금</th>
+              <th colspan="3" class="group-reinvest">배당 재투자 O (세후)</th>
+              <th colspan="3" class="group-no-reinvest">배당 재투자 X (세후)</th>
+              <th rowspan="2" style="vertical-align: middle; color: var(--accent);">총자산 차이</th>
+            </tr>
+            <tr>
+              <th class="group-reinvest">총 자산</th>
+              <th class="group-reinvest">월 배당</th>
+              <th class="group-reinvest">누적 배당</th>
+              <th class="group-no-reinvest">총 자산</th>
+              <th class="group-no-reinvest">월 배당</th>
+              <th class="group-no-reinvest">누적 배당</th>
+            </tr>
+          </thead>
+          <tbody id="data-table-body-aftertax"></tbody>
         </table>
       </div>
     </div>
@@ -1108,27 +1205,65 @@
 // 데이터 정의
 // ============================================================
 const PRESETS = {
-  // ===== 미국 ETF =====
-  'SCHD':  { name: 'SCHD',  group: '🇺🇸 미국 ETF', desc: '배당성장 대표',     dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
-  'JEPI':  { name: 'JEPI',  group: '🇺🇸 미국 ETF', desc: '월배당 고배당',     dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
-  'JEPQ':  { name: 'JEPQ',  group: '🇺🇸 미국 ETF', desc: '월배당 나스닥',     dividendYield: 9.5, dividendGrowth: 3.0,  priceGrowth: 6.0 },
-  'VYM':   { name: 'VYM',   group: '🇺🇸 미국 ETF', desc: '안정적 고배당',     dividendYield: 3.0, dividendGrowth: 7.0,  priceGrowth: 7.0 },
-  'VOO':   { name: 'VOO',   group: '🇺🇸 미국 ETF', desc: 'S&P500 (저배당)',   dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
-  'QQQ':   { name: 'QQQ',   group: '🇺🇸 미국 ETF', desc: '나스닥 성장',       dividendYield: 0.6, dividendGrowth: 8.0,  priceGrowth: 12.0 },
-  'O':     { name: 'O',     group: '🇺🇸 미국 ETF', desc: '월배당 리츠',       dividendYield: 5.5, dividendGrowth: 4.0,  priceGrowth: 3.0 },
-  'KO':    { name: 'KO',    group: '🇺🇸 미국 ETF', desc: '코카콜라 (배당킹)', dividendYield: 3.1, dividendGrowth: 5.0,  priceGrowth: 6.0 },
+  // ===== 국내상장 국내 주식/ETF =====
+  // -- ETF --
+  'PLUS고배당주':                 { name: 'PLUS 고배당주',                          group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 5.8, dividendGrowth: 10.5, priceGrowth: 7.0 },
+  'TIGER은행고배당플러스TOP10':   { name: 'TIGER 은행고배당플러스TOP10',            group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 6.5, dividendGrowth: 5.0,  priceGrowth: 6.0 },
+  'TIMEFOLIO코리아플러스배당':    { name: 'TIME Korea플러스배당액티브',              group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 4.5, dividendGrowth: 8.0,  priceGrowth: 9.0 },
+  'TIGER코리아배당다우존스':      { name: 'TIGER 코리아배당다우존스',                group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 4.2, dividendGrowth: 7.0,  priceGrowth: 7.0 },
+  'KODEX은행':                    { name: 'KODEX 은행',                              group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 5.5, dividendGrowth: 4.0,  priceGrowth: 5.5 },
+  'SOL금융지주플러스고배당':      { name: 'SOL 금융지주플러스고배당',                group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 7.0, dividendGrowth: 5.0,  priceGrowth: 6.0 },
+  'KODEX주주환원고배당주':        { name: 'KODEX 주주환원고배당주',                  group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 5.0, dividendGrowth: 7.0,  priceGrowth: 7.0 },
+  'KODEX금융고배당TOP10':         { name: 'KODEX 금융고배당TOP10',                  group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 6.2, dividendGrowth: 5.5,  priceGrowth: 6.0 },
+  'KODEX200타겟위클리':           { name: 'KODEX 200타겟위클리커버드콜',             group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 12.0, dividendGrowth: 0.5, priceGrowth: 3.0 },
+  // -- 개별주식 --
+  '삼성전자':                     { name: '삼성전자',                                group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 2.5, dividendGrowth: 4.0,  priceGrowth: 6.0 },
+  'SK하이닉스':                   { name: 'SK하이닉스',                              group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 1.0, dividendGrowth: 5.0,  priceGrowth: 12.0 },
+  'KT&G':                         { name: 'KT&G',                                    group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 5.5, dividendGrowth: 4.0,  priceGrowth: 4.0 },
+  'KB금융':                       { name: 'KB금융',                                  group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 4.5, dividendGrowth: 8.0,  priceGrowth: 7.0 },
+  '신한지주':                     { name: '신한지주',                                group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 4.8, dividendGrowth: 7.0,  priceGrowth: 6.5 },
+  '하나금융지주':                 { name: '하나금융지주',                            group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 6.0, dividendGrowth: 6.0,  priceGrowth: 6.0 },
+  '우리금융지주':                 { name: '우리금융지주',                            group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 6.5, dividendGrowth: 5.0,  priceGrowth: 5.0 },
+  '기업은행':                     { name: '기업은행',                                group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 7.0, dividendGrowth: 4.0,  priceGrowth: 4.5 },
+  '현대차':                       { name: '현대차',                                  group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 4.0, dividendGrowth: 5.0,  priceGrowth: 7.0 },
+  '기아':                         { name: '기아',                                    group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 4.5, dividendGrowth: 5.0,  priceGrowth: 7.0 },
+  'SK텔레콤':                     { name: 'SK텔레콤',                                group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 5.5, dividendGrowth: 3.0,  priceGrowth: 4.0 },
+  'KT':                           { name: 'KT',                                      group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 5.0, dividendGrowth: 4.0,  priceGrowth: 4.5 },
+  'POSCO홀딩스':                  { name: 'POSCO홀딩스',                            group: '🇰🇷 국내상장 국내주식/ETF', desc: '',  dividendYield: 3.5, dividendGrowth: 4.0,  priceGrowth: 5.0 },
 
-  // ===== 국내 월배당 ETF (시가총액 상위 + 월분배 지급) =====
-  'TIGER미국배당다우존스':         { name: 'TIGER 미국배당다우존스',         group: '🇰🇷 국내 월배당 ETF', desc: '한국판 SCHD · 배당성장형',     dividendYield: 3.2, dividendGrowth: 9.0,  priceGrowth: 8.0 },
-  'KODEX미국배당커버드콜액티브':   { name: 'KODEX 미국배당커버드콜액티브',   group: '🇰🇷 국내 월배당 ETF', desc: '미국 우량주 + 커버드콜',       dividendYield: 9.4, dividendGrowth: 1.5,  priceGrowth: 4.5 },
-  'TIGER미국배당다우존스타겟2호': { name: 'TIGER 미국배당다우존스타겟CC2호',group: '🇰🇷 국내 월배당 ETF', desc: 'SCHD + 커버드콜 결합',         dividendYield: 11.6, dividendGrowth: 1.0, priceGrowth: 4.0 },
-  'KODEX200타겟위클리':           { name: 'KODEX 200타겟위클리CC',          group: '🇰🇷 국내 월배당 ETF', desc: '코스피200 위클리 옵션',        dividendYield: 12.0, dividendGrowth: 0.5, priceGrowth: 3.0 },
-  'KODEX미국나스닥100CC':         { name: 'KODEX 미국나스닥100데일리CC',    group: '🇰🇷 국내 월배당 ETF', desc: '나스닥 + 커버드콜 (고배당)',   dividendYield: 19.7, dividendGrowth: 0.0, priceGrowth: 1.5 },
-  'RISE미국테크100CC':            { name: 'RISE 미국테크100데일리CC',       group: '🇰🇷 국내 월배당 ETF', desc: '테크주 + 커버드콜 (초고배당)', dividendYield: 20.7, dividendGrowth: 0.0, priceGrowth: 0.5 },
-  'SOL미국30년국채CC':            { name: 'SOL 미국30년국채CC',             group: '🇰🇷 국내 월배당 ETF', desc: '국채 + 커버드콜',              dividendYield: 10.1, dividendGrowth: 0.5, priceGrowth: 2.0 },
-  'TIGER미국나스닥100CC':         { name: 'TIGER 미국나스닥100CC(합성)',    group: '🇰🇷 국내 월배당 ETF', desc: '나스닥 + 커버드콜 (스테디)',   dividendYield: 11.3, dividendGrowth: 0.5, priceGrowth: 3.0 },
-  'PLUS고배당주위클리':           { name: 'PLUS 고배당주위클리CC',          group: '🇰🇷 국내 월배당 ETF', desc: '국내 고배당 + 위클리 옵션',    dividendYield: 13.7, dividendGrowth: 1.0, priceGrowth: 3.5 },
-  'SOL팔란티어CC혼합':            { name: 'SOL 팔란티어CC OTM채권혼합',     group: '🇰🇷 국내 월배당 ETF', desc: 'IRP 100% 가능 (퇴직연금)',     dividendYield: 26.2, dividendGrowth: 0.0, priceGrowth: 0.0 },
+  // ===== 국내상장 해외주식/ETF =====
+  'TIGER미국배당다우존스':         { name: 'TIGER 미국배당다우존스',                  group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 3.2, dividendGrowth: 9.0,  priceGrowth: 8.0 },
+  'ACE미국배당퀄리티':            { name: 'ACE 미국배당퀄리티',                      group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 3.0, dividendGrowth: 9.0,  priceGrowth: 8.0 },
+  'KODEX미국배당커버드콜액티브':   { name: 'KODEX 미국배당커버드콜액티브',            group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 9.4, dividendGrowth: 1.5, priceGrowth: 4.5 },
+  'TIGER미국배당다우존스타겟2호': { name: 'TIGER 미국배당다우존스타겟커버드콜2호',    group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 11.6, dividendGrowth: 1.0, priceGrowth: 4.0 },
+  'KODEX미국나스닥100CC':         { name: 'KODEX 미국나스닥100데일리커버드콜OTM',    group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 19.7, dividendGrowth: 0.0, priceGrowth: 1.5 },
+  'RISE미국테크100CC':            { name: 'RISE 미국테크100데일리고정커버드콜',      group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 20.7, dividendGrowth: 0.0, priceGrowth: 0.5 },
+  'SOL미국30년국채CC':            { name: 'SOL 미국30년국채커버드콜(합성)',          group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 10.1, dividendGrowth: 0.5, priceGrowth: 2.0 },
+  'TIGER미국나스닥100CC':         { name: 'TIGER 미국나스닥100커버드콜(합성)',       group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 11.3, dividendGrowth: 0.5, priceGrowth: 3.0 },
+  'SOL팔란티어CC혼합':            { name: 'SOL 팔란티어커버드콜OTM채권혼합',         group: '🇰🇷 국내상장 해외주식/ETF', desc: '',  dividendYield: 26.2, dividendGrowth: 0.0, priceGrowth: 0.0 },
+
+  // ===== 해외 주식/ETF =====
+  // -- ETF --
+  'SCHD':  { name: 'SCHD (배당성장 ETF)',         group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
+  'JEPI':  { name: 'JEPI (월배당 고배당 ETF)',    group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
+  'JEPQ':  { name: 'JEPQ (월배당 나스닥 ETF)',    group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 9.5, dividendGrowth: 3.0,  priceGrowth: 6.0 },
+  'VYM':   { name: 'VYM (안정 고배당 ETF)',       group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 3.0, dividendGrowth: 7.0,  priceGrowth: 7.0 },
+  'VOO':   { name: 'VOO (S&P500 ETF)',           group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
+  'QQQ':   { name: 'QQQ (나스닥100 ETF)',        group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 0.6, dividendGrowth: 8.0,  priceGrowth: 12.0 },
+  'O':     { name: 'O (리얼티인컴 · 월배당 리츠)', group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 5.5, dividendGrowth: 4.0,  priceGrowth: 3.0 },
+  // -- 개별주식 --
+  'KO':    { name: 'KO (코카콜라)',               group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 3.1, dividendGrowth: 5.0,  priceGrowth: 6.0 },
+  'PEP':   { name: 'PEP (펩시코)',                group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 3.5, dividendGrowth: 6.0,  priceGrowth: 6.0 },
+  'JNJ':   { name: 'JNJ (존슨앤존슨)',            group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 3.0, dividendGrowth: 6.0,  priceGrowth: 6.0 },
+  'PG':    { name: 'PG (P&G)',                    group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 2.5, dividendGrowth: 5.0,  priceGrowth: 7.0 },
+  'MCD':   { name: 'MCD (맥도날드)',              group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 2.4, dividendGrowth: 8.0,  priceGrowth: 8.0 },
+  'MO':    { name: 'MO (알트리아)',               group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 8.0, dividendGrowth: 4.0,  priceGrowth: 2.0 },
+  'XOM':   { name: 'XOM (엑슨모빌)',              group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 3.5, dividendGrowth: 4.0,  priceGrowth: 5.0 },
+  'CVX':   { name: 'CVX (셰브론)',                group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 4.2, dividendGrowth: 5.0,  priceGrowth: 5.0 },
+  'T':     { name: 'T (AT&T)',                    group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 6.5, dividendGrowth: 1.0,  priceGrowth: 3.0 },
+  'VZ':    { name: 'VZ (버라이즌)',               group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 6.8, dividendGrowth: 2.0,  priceGrowth: 3.0 },
+  'AAPL':  { name: 'AAPL (애플)',                 group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 0.5, dividendGrowth: 5.0,  priceGrowth: 12.0 },
+  'MSFT':  { name: 'MSFT (마이크로소프트)',       group: '🇺🇸 해외주식/ETF', desc: '',  dividendYield: 0.7, dividendGrowth: 10.0, priceGrowth: 13.0 },
 
   '커스텀': { name: '커스텀', group: '⚙️ 직접 입력', desc: '내 종목 직접 입력', dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 },
 };
@@ -1137,9 +1272,9 @@ const CHART_COLORS = ['#D9542B', '#E89A6F', '#8B6F47', '#C4A57B', '#5A6B5A'];
 
 // 상태
 let holdings = [
-  { id: 1, preset: 'SCHD', customName: '', weight: 50, dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
-  { id: 2, preset: 'JEPI', customName: '', weight: 30, dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
-  { id: 3, preset: 'VOO',  customName: '', weight: 20, dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
+  { id: 1, preset: 'PLUS고배당주',         customName: '', weight: 40, dividendYield: 5.8,  dividendGrowth: 10.5, priceGrowth: 7.0 },
+  { id: 2, preset: 'TIGER미국배당다우존스', customName: '', weight: 30, dividendYield: 3.2,  dividendGrowth: 9.0,  priceGrowth: 8.0 },
+  { id: 3, preset: 'KODEX200타겟위클리',   customName: '', weight: 30, dividendYield: 12.0, dividendGrowth: 0.5,  priceGrowth: 3.0 },
 ];
 
 // Chart.js 인스턴스 보관
@@ -1196,7 +1331,7 @@ function renderHoldings() {
       presetOptions += `<optgroup label="${groupName}">`;
       items.forEach(({ key, p }) => {
         const sel = h.preset === key ? 'selected' : '';
-        presetOptions += `<option value="${key}" ${sel}>${p.name} · ${p.desc}</option>`;
+        presetOptions += `<option value="${key}" ${sel}>${p.name}</option>`;
       });
       presetOptions += `</optgroup>`;
     });
@@ -1220,19 +1355,19 @@ function renderHoldings() {
         </div>
         <div>
           <label class="label">비중 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="weight" value="${h.weight}" min="0" max="100">
+          <input type="number" data-id="${h.id}" data-field="weight" value="${h.weight}" min="0" max="100" title="포트폴리오 내 이 종목의 비중. 모든 종목의 합이 100%가 되어야 합니다.">
         </div>
         <div>
-          <label class="label">배당률 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="dividendYield" value="${h.dividendYield}" step="0.1">
+          <label class="label" title="현재 시가배당률. 주가 대비 연간 배당금 비율입니다.">배당률 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="dividendYield" value="${h.dividendYield}" step="0.1" title="현재 시가배당률. 주가 대비 연간 배당금 비율입니다. (예: SCHD 3.5%)">
         </div>
         <div>
-          <label class="label">배당성장 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="dividendGrowth" value="${h.dividendGrowth}" step="0.5">
+          <label class="label" title="배당금이 매년 얼마나 늘어나는지의 비율">배당성장 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="dividendGrowth" value="${h.dividendGrowth}" step="0.5" title="배당금이 매년 얼마나 늘어나는지. SCHD는 약 11%, JEPI는 약 2%, 커버드콜 ETF는 0~1%가 일반적입니다.">
         </div>
         <div>
-          <label class="label">주가성장 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="priceGrowth" value="${h.priceGrowth}" step="0.5">
+          <label class="label" title="주가가 매년 얼마나 오를지 예상치">주가성장 (%)</label>
+          <input type="number" data-id="${h.id}" data-field="priceGrowth" value="${h.priceGrowth}" step="0.5" title="주가가 매년 얼마나 오를지의 연평균 예상치. 총 자산 계산의 핵심 지표입니다. (S&P500 장기 평균 약 10%)">
         </div>
         <button class="btn-icon" data-remove="${h.id}" ${holdings.length <= 1 ? 'disabled' : ''}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
@@ -1318,10 +1453,11 @@ function simulate() {
   const totalWeight = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
   const inflationOn = document.getElementById('inflation-toggle').checked;
   const inflationRate = inflationOn ? (Number(document.getElementById('inflation-rate').value) || 0) / 100 : 0;
+  const TAX_RATE = 0.15; // 배당소득세 15% (간이)
 
   if (totalWeight === 0) return null;
 
-  // 재투자 O
+  // 재투자 O (세전)
   const stockStates = holdings.map(h => ({
     name: getHoldingDisplayName(h),
     principal: 0, value: 0,
@@ -1331,7 +1467,7 @@ function simulate() {
     weight: h.weight / totalWeight,
     yearlyDividend: 0, cumulativeDividend: 0,
   }));
-  // 재투자 X
+  // 재투자 X (세전)
   const noReStates = holdings.map(h => ({
     name: getHoldingDisplayName(h),
     principal: 0, value: 0, cashDividends: 0,
@@ -1341,15 +1477,36 @@ function simulate() {
     weight: h.weight / totalWeight,
     yearlyDividend: 0,
   }));
+  // 재투자 O (세후) - 배당받을 때마다 15% 차감 후 재투자
+  const stockStatesAfterTax = holdings.map(h => ({
+    name: getHoldingDisplayName(h),
+    principal: 0, value: 0,
+    yieldRate: h.dividendYield / 100,
+    growth: h.dividendGrowth / 100,
+    priceGrowth: h.priceGrowth / 100,
+    weight: h.weight / totalWeight,
+    yearlyDividend: 0, cumulativeDividend: 0, cumulativeTax: 0,
+  }));
+  // 재투자 X (세후)
+  const noReStatesAfterTax = holdings.map(h => ({
+    name: getHoldingDisplayName(h),
+    principal: 0, value: 0, cashDividends: 0,
+    yieldRate: h.dividendYield / 100,
+    growth: h.dividendGrowth / 100,
+    priceGrowth: h.priceGrowth / 100,
+    weight: h.weight / totalWeight,
+    yearlyDividend: 0, cumulativeTax: 0,
+  }));
 
-  stockStates.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
-  noReStates.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
+  [stockStates, noReStates, stockStatesAfterTax, noReStatesAfterTax].forEach(arr => {
+    arr.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
+  });
 
   const yearlyData = [];
   const annualContribution = monthly * 12;
 
   for (let year = 1; year <= years; year++) {
-    // === 재투자 O ===
+    // === 재투자 O (세전) ===
     stockStates.forEach(s => {
       const c = annualContribution * s.weight;
       s.principal += c; s.value += c;
@@ -1363,7 +1520,7 @@ function simulate() {
       s.value += div;
     });
 
-    // === 재투자 X ===
+    // === 재투자 X (세전) ===
     noReStates.forEach(s => {
       const c = annualContribution * s.weight;
       s.principal += c; s.value += c;
@@ -1376,6 +1533,39 @@ function simulate() {
       s.cashDividends += div;
     });
 
+    // === 재투자 O (세후) - 배당의 15%를 매년 세금으로 차감 ===
+    stockStatesAfterTax.forEach(s => {
+      const c = annualContribution * s.weight;
+      s.principal += c; s.value += c;
+    });
+    stockStatesAfterTax.forEach(s => { s.value *= (1 + s.priceGrowth); });
+    stockStatesAfterTax.forEach(s => {
+      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
+      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
+      const tax = div * TAX_RATE;
+      const divAfterTax = div - tax;
+      s.yearlyDividend = divAfterTax;
+      s.cumulativeDividend += divAfterTax;
+      s.cumulativeTax += tax;
+      s.value += divAfterTax; // 세후 금액만 재투자
+    });
+
+    // === 재투자 X (세후) ===
+    noReStatesAfterTax.forEach(s => {
+      const c = annualContribution * s.weight;
+      s.principal += c; s.value += c;
+    });
+    noReStatesAfterTax.forEach(s => { s.value *= (1 + s.priceGrowth); });
+    noReStatesAfterTax.forEach(s => {
+      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
+      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
+      const tax = div * TAX_RATE;
+      const divAfterTax = div - tax;
+      s.yearlyDividend = divAfterTax;
+      s.cashDividends += divAfterTax;
+      s.cumulativeTax += tax;
+    });
+
     const totalValue = stockStates.reduce((sum, s) => sum + s.value, 0);
     const totalPrincipal = stockStates.reduce((sum, s) => sum + s.principal, 0);
     const totalDividend = stockStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
@@ -1385,6 +1575,17 @@ function simulate() {
     const noReCash = noReStates.reduce((sum, s) => sum + s.cashDividends, 0);
     const noReTotal = noReValue + noReCash;
     const noReYearlyDiv = noReStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
+
+    // 세후 트랙
+    const totalValueAT = stockStatesAfterTax.reduce((sum, s) => sum + s.value, 0);
+    const totalDivAT = stockStatesAfterTax.reduce((sum, s) => sum + s.yearlyDividend, 0);
+    const totalCumDivAT = stockStatesAfterTax.reduce((sum, s) => sum + s.cumulativeDividend, 0);
+    const totalCumTaxAT = stockStatesAfterTax.reduce((sum, s) => sum + s.cumulativeTax, 0);
+    const noReValueAT = noReStatesAfterTax.reduce((sum, s) => sum + s.value, 0);
+    const noReCashAT = noReStatesAfterTax.reduce((sum, s) => sum + s.cashDividends, 0);
+    const noReTotalAT = noReValueAT + noReCashAT;
+    const noReYearlyDivAT = noReStatesAfterTax.reduce((sum, s) => sum + s.yearlyDividend, 0);
+    const noReCumTaxAT = noReStatesAfterTax.reduce((sum, s) => sum + s.cumulativeTax, 0);
 
     // 물가상승률 누적 디플레이터 (year년 후 1원의 현재 가치)
     const deflator = inflationOn ? Math.pow(1 + inflationRate, year) : 1;
@@ -1404,6 +1605,18 @@ function simulate() {
       noReinvestMonthlyDiv: Math.round(noReYearlyDiv / 12),
       noReinvestReturnRate: parseFloat(((noReTotal / totalPrincipal - 1) * 100).toFixed(1)),
       reinvestGap: Math.round(totalValue - noReTotal),
+      // 세후 (15% 차감)
+      totalValueAT: Math.round(totalValueAT),
+      yearlyDividendAT: Math.round(totalDivAT),
+      monthlyDividendAT: Math.round(totalDivAT / 12),
+      cumulativeDividendAT: Math.round(totalCumDivAT),
+      cumulativeTaxAT: Math.round(totalCumTaxAT),
+      noReinvestTotalAT: Math.round(noReTotalAT),
+      noReinvestCashAT: Math.round(noReCashAT),
+      noReinvestYearlyDivAT: Math.round(noReYearlyDivAT),
+      noReinvestMonthlyDivAT: Math.round(noReYearlyDivAT / 12),
+      noReinvestCumTaxAT: Math.round(noReCumTaxAT),
+      reinvestGapAT: Math.round(totalValueAT - noReTotalAT),
       // 실질가치 (현재 돈 가치 기준) - 물가 반영 시에만 의미 있음
       realTotalValue: Math.round(totalValue / deflator),
       realNoReinvestTotal: Math.round(noReTotal / deflator),
@@ -1414,6 +1627,15 @@ function simulate() {
       realCumulativeDividend: Math.round(totalCumDiv / deflator),
       realNoReinvestCash: Math.round(noReCash / deflator),
       realReinvestGap: Math.round((totalValue - noReTotal) / deflator),
+      // 세후 + 물가 반영 (실질)
+      realTotalValueAT: Math.round(totalValueAT / deflator),
+      realNoReinvestTotalAT: Math.round(noReTotalAT / deflator),
+      realMonthlyDividendAT: Math.round(totalDivAT / 12 / deflator),
+      realNoReinvestMonthlyDivAT: Math.round(noReYearlyDivAT / 12 / deflator),
+      realCumulativeDividendAT: Math.round(totalCumDivAT / deflator),
+      realNoReinvestCashAT: Math.round(noReCashAT / deflator),
+      realCumulativeTaxAT: Math.round(totalCumTaxAT / deflator),
+      realReinvestGapAT: Math.round((totalValueAT - noReTotalAT) / deflator),
       stockWeights: stockStates.map(s => ({
         name: s.name,
         weight: parseFloat(((s.value / totalValue) * 100).toFixed(1))
@@ -2075,15 +2297,10 @@ function renderResults(data) {
   const years = data.years;
   const inflOn = data.inflationOn;
 
-  // 카드들 - 물가 ON이면 실질가치 추가 표시
+  // === 명목가치 카드 (세전) - 항상 표시 ===
   document.getElementById('card1-label').textContent = `${years}년 후 자산 (재투자 O)`;
   document.getElementById('card1-value').textContent = formatKRW(s.finalValue);
-  if (inflOn) {
-    document.getElementById('card1-sub').innerHTML = 
-      `원금의 ${s.multiplier}배 · <span style="color: #D9D2C5;">실질 ${formatKRW(s.realFinalValue)}원</span>`;
-  } else {
-    document.getElementById('card1-sub').textContent = `원금의 ${s.multiplier}배`;
-  }
+  document.getElementById('card1-sub').textContent = `원금의 ${s.multiplier}배`;
 
   document.getElementById('card2-label').textContent = `${years}년 후 자산 (재투자 X)`;
   document.getElementById('card2-value').textContent = formatKRW(s.noReinvestTotal);
@@ -2092,11 +2309,38 @@ function renderResults(data) {
   document.getElementById('card3-sub').textContent = `${s.reinvestGapPercent}% 더 많음`;
 
   document.getElementById('card4-value').textContent = formatKRW(s.finalMonthlyDividend);
+  document.getElementById('card4-sub').textContent = `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+
+  // === 실질가치 카드 (물가 반영) - 물가 ON일 때만 표시 ===
+  const realCardsSection = document.getElementById('real-cards-section');
   if (inflOn) {
-    document.getElementById('card4-sub').innerHTML = 
-      `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원<br><span style="color: var(--ink-mute);">실질 ${formatKRW(s.realMonthlyDividend)}원/월</span>`;
+    realCardsSection.style.display = 'block';
+    document.getElementById('real-card-desc').textContent = 
+      `오늘 돈 가치 기준 환산 (물가 ${data.inflationRate}% 반영)`;
+    
+    // 실질 카드 1: 재투자 O 실질
+    document.getElementById('rcard1-label').textContent = `${years}년 후 자산 (재투자 O · 실질)`;
+    document.getElementById('rcard1-value').textContent = formatKRW(s.realFinalValue);
+    document.getElementById('rcard1-sub').innerHTML = 
+      `명목 <span style="opacity: 0.7;">${formatKRW(s.finalValue)}원</span>의 오늘 가치`;
+    
+    // 실질 카드 2: 재투자 X 실질
+    document.getElementById('rcard2-label').textContent = `${years}년 후 자산 (재투자 X · 실질)`;
+    document.getElementById('rcard2-value').textContent = formatKRW(s.realNoReinvestTotal);
+    document.getElementById('rcard2-sub').textContent = 
+      `명목 ${formatKRW(s.noReinvestTotal)}원의 오늘 가치`;
+    
+    // 실질 카드 3: 물가 손실분
+    document.getElementById('rcard3-value').textContent = '-' + formatKRW(s.inflationLoss);
+    document.getElementById('rcard3-sub').textContent = 
+      `${s.inflationLossPercent}% 가치 하락`;
+    
+    // 실질 카드 4: 실질 월배당
+    document.getElementById('rcard4-value').textContent = formatKRW(s.realMonthlyDividend);
+    document.getElementById('rcard4-sub').textContent = 
+      `명목 ${formatKRW(s.finalMonthlyDividend)}원의 실질 구매력`;
   } else {
-    document.getElementById('card4-sub').textContent = `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+    realCardsSection.style.display = 'none';
   }
 
   document.getElementById('card5-value').textContent = formatKRW(s.totalPrincipal);
@@ -2165,6 +2409,64 @@ function renderResults(data) {
       `;
     }
     tbody.appendChild(tr);
+  });
+
+  // === 세후 테이블 렌더링 (15% 차감) ===
+  const tbodyAT = document.getElementById('data-table-body-aftertax');
+  tbodyAT.innerHTML = '';
+  data.yearlyData.forEach(row => {
+    const isFinal = row.year === years;
+    const tr = document.createElement('tr');
+    if (isFinal) tr.className = 'highlight-row';
+    
+    if (inflOn) {
+      // 물가 ON: 세후 금액 + 실질 금액 함께
+      tr.innerHTML = `
+        <td>${row.year}년</td>
+        <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
+        <td class="col-reinvest-emph">
+          ${formatKRWTable(row.totalValueAT)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realTotalValueAT)}</div>
+        </td>
+        <td class="col-reinvest">
+          ${formatKRWTable(row.monthlyDividendAT)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realMonthlyDividendAT)}</div>
+        </td>
+        <td class="col-reinvest">
+          ${formatKRWTable(row.cumulativeDividendAT)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realCumulativeDividendAT)}</div>
+        </td>
+        <td class="col-no-reinvest-emph">
+          ${formatKRWTable(row.noReinvestTotalAT)}
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestTotalAT)}</div>
+        </td>
+        <td class="col-no-reinvest">
+          ${formatKRWTable(row.noReinvestMonthlyDivAT)}
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestMonthlyDivAT)}</div>
+        </td>
+        <td class="col-no-reinvest">
+          ${formatKRWTable(row.noReinvestCashAT)}
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestCashAT)}</div>
+        </td>
+        <td class="col-gap">
+          +${formatKRW(row.reinvestGapAT)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 +${formatKRW(row.realReinvestGapAT)}</div>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${row.year}년</td>
+        <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
+        <td class="col-reinvest-emph">${formatKRWTable(row.totalValueAT)}</td>
+        <td class="col-reinvest">${formatKRWTable(row.monthlyDividendAT)}</td>
+        <td class="col-reinvest">${formatKRWTable(row.cumulativeDividendAT)}</td>
+        <td class="col-no-reinvest-emph">${formatKRWTable(row.noReinvestTotalAT)}</td>
+        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDivAT)}</td>
+        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCashAT)}</td>
+        <td class="col-gap">+${formatKRW(row.reinvestGapAT)}</td>
+      `;
+    }
+    tbodyAT.appendChild(tr);
   });
 
   // 인사이트
