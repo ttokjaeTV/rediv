@@ -921,11 +921,11 @@
           </div>
         </div>
         <label class="toggle-switch">
-          <input type="checkbox" id="inflation-toggle">
+          <input type="checkbox" id="inflation-toggle" checked>
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div class="inflation-input-wrap" id="inflation-input-wrap" style="display: none;">
+      <div class="inflation-input-wrap" id="inflation-input-wrap" style="display: flex;">
         <label class="label" style="margin-bottom: 0;">연간 물가상승률 (%)</label>
         <input type="number" id="inflation-rate" value="2.5" step="0.1" min="0" max="20" style="max-width: 200px;">
         <div class="input-hint" style="margin-top: 0;">한국 장기 평균 약 2.5%</div>
@@ -1002,25 +1002,34 @@
 
     <!-- 차트 1: 자산 누적 영역 그래프 -->
     <div class="card">
-      <div class="chart-title">자산 누적 추이 · 재투자 vs 미재투자</div>
+      <div class="chart-title">자산 누적 추이 · 재투자 O vs 재투자 X</div>
       <div class="chart-subtitle" id="chart1-subtitle">-</div>
       <div class="chart-container lg">
         <canvas id="chart-area"></canvas>
       </div>
     </div>
 
-    <!-- 차트 2: 연간 배당금 막대 -->
+    <!-- 차트 2: 연간 배당금 막대 (명목) -->
     <div class="card">
-      <div class="chart-title">연간 배당금 추이 · 재투자 vs 미재투자</div>
+      <div class="chart-title">연간 배당금 추이 (명목가치) · 재투자 O vs 재투자 X</div>
       <div class="chart-subtitle">재투자한 경우 매년 받는 배당이 가파르게 늘어납니다 (단위: 만원)</div>
       <div class="chart-container lg">
         <canvas id="chart-bar"></canvas>
       </div>
     </div>
 
+    <!-- 차트 2-2: 물가 반영 연간 배당금 (실질가치) -->
+    <div class="card" id="chart-bar-real-card">
+      <div class="chart-title">연간 배당금 추이 (실질가치) · 물가 반영</div>
+      <div class="chart-subtitle" id="chart-bar-real-subtitle">물가상승률을 반영하면 미래 배당의 진짜 구매력이 보입니다</div>
+      <div class="chart-container lg">
+        <canvas id="chart-bar-real"></canvas>
+      </div>
+    </div>
+
     <!-- 차트 3: 누적 수익률 곡선 -->
     <div class="card">
-      <div class="chart-title">누적 수익률 곡선 · 재투자 vs 미재투자</div>
+      <div class="chart-title">누적 수익률 곡선 · 재투자 O vs 재투자 X</div>
       <div class="chart-subtitle">시간이 갈수록 두 곡선의 격차가 벌어지는 게 복리의 본질입니다</div>
       <div class="chart-container sm">
         <canvas id="chart-line"></canvas>
@@ -1458,12 +1467,19 @@ const chartCommonOptions = {
     tooltip: {
       backgroundColor: '#FBF7F0',
       titleColor: '#1A1A1A',
-      bodyColor: '#4A4A4A',
-      borderColor: '#E5DCC8',
+      bodyColor: '#3A2F26',
+      borderColor: '#D9542B',
       borderWidth: 1.5,
-      padding: 12,
-      titleFont: { family: 'Pretendard', size: 13, weight: 700 },
+      padding: 14,
+      titleFont: { family: 'Pretendard', size: 14, weight: 800 },
       bodyFont: { family: 'Pretendard', size: 13, weight: 600 },
+      titleSpacing: 6,
+      bodySpacing: 8,
+      titleMarginBottom: 10,
+      caretSize: 8,
+      cornerRadius: 10,
+      usePointStyle: true,
+      boxPadding: 6,
     }
   }
 };
@@ -1471,71 +1487,178 @@ const chartCommonOptions = {
 function renderAreaChart(data) {
   if (chartArea) chartArea.destroy();
   const ctx = document.getElementById('chart-area').getContext('2d');
-  
-  // 그라데이션
-  const gradAccent = ctx.createLinearGradient(0, 0, 0, 360);
-  gradAccent.addColorStop(0, 'rgba(217, 84, 43, 0.4)');
-  gradAccent.addColorStop(1, 'rgba(217, 84, 43, 0.05)');
-  
-  const gradBrown = ctx.createLinearGradient(0, 0, 0, 360);
-  gradBrown.addColorStop(0, 'rgba(139, 111, 71, 0.3)');
-  gradBrown.addColorStop(1, 'rgba(139, 111, 71, 0.05)');
-  
-  const gradInk = ctx.createLinearGradient(0, 0, 0, 360);
-  gradInk.addColorStop(0, 'rgba(74, 74, 74, 0.2)');
-  gradInk.addColorStop(1, 'rgba(74, 74, 74, 0.03)');
 
   const datasets = [
     {
       label: '누적 원금',
       data: data.yearlyData.map(d => d.totalPrincipal),
-      borderColor: '#4A4A4A',
+      borderColor: '#9B9387',
       borderWidth: 1.5,
       borderDash: [4, 4],
-      backgroundColor: gradInk,
-      fill: true,
+      backgroundColor: 'transparent',
+      fill: false,
       tension: 0.3,
       pointRadius: 0,
+      pointHoverRadius: 4,
+      _endLabelColor: '#9B9387',
     },
     {
-      label: '배당 재투자 X (명목)',
-      data: data.yearlyData.map(d => d.noReinvestTotal),
-      borderColor: '#8B6F47',
-      borderWidth: 2.5,
-      backgroundColor: gradBrown,
-      fill: true,
-      tension: 0.3,
-      pointRadius: 0,
-      pointHoverRadius: 5,
-    },
-    {
-      label: '배당 재투자 O (명목)',
+      label: data.inflationOn ? '재투자 O · 명목' : '배당 재투자 O',
       data: data.yearlyData.map(d => d.totalValue),
       borderColor: '#D9542B',
       borderWidth: 3,
-      backgroundColor: gradAccent,
-      fill: true,
+      backgroundColor: 'transparent',
+      fill: false,
       tension: 0.3,
       pointRadius: 0,
       pointHoverRadius: 6,
-    }
-  ];
-
-  // 물가상승률 ON일 때 실질가치 라인 추가
-  if (data.inflationOn) {
-    datasets.push({
-      label: `재투자 O (실질·${data.inflationRate}% 물가반영)`,
-      data: data.yearlyData.map(d => d.realTotalValue),
-      borderColor: '#5A6B5A',
+      _endLabelColor: '#D9542B',
+    },
+    {
+      label: data.inflationOn ? '재투자 X · 명목' : '배당 재투자 X',
+      data: data.yearlyData.map(d => d.noReinvestTotal),
+      borderColor: '#8B6F47',
       borderWidth: 2.5,
-      borderDash: [8, 4],
       backgroundColor: 'transparent',
       fill: false,
       tension: 0.3,
       pointRadius: 0,
       pointHoverRadius: 5,
+      _endLabelColor: '#8B6F47',
+    }
+  ];
+
+  // 물가상승률 ON일 때 재투자 O/X 둘 다 실질가치 라인 추가
+  if (data.inflationOn) {
+    datasets.push({
+      label: `재투자 O · 실질`,
+      data: data.yearlyData.map(d => d.realTotalValue),
+      borderColor: '#A03D1F',
+      borderWidth: 2.5,
+      borderDash: [10, 5],
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      _endLabelColor: '#A03D1F',
+    });
+    datasets.push({
+      label: `재투자 X · 실질`,
+      data: data.yearlyData.map(d => d.realNoReinvestTotal),
+      borderColor: '#5A4A3D',
+      borderWidth: 2,
+      borderDash: [10, 5],
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      _endLabelColor: '#5A4A3D',
     });
   }
+
+  // 끝점 라벨 플러그인
+  const endLabelPlugin = {
+    id: 'endLabel',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      ctx.save();
+      
+      // 라벨 위치 충돌 방지를 위해 y좌표 수집 후 정렬
+      const labels = [];
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i);
+        if (meta.hidden) return;
+        const lastIdx = dataset.data.length - 1;
+        const lastPoint = meta.data[lastIdx];
+        if (!lastPoint) return;
+        labels.push({
+          x: lastPoint.x,
+          y: lastPoint.y,
+          color: dataset._endLabelColor || dataset.borderColor,
+          text: dataset.label,
+          value: dataset.data[lastIdx],
+        });
+      });
+      
+      // y좌표 충돌 시 살짝씩 어긋나게 조정
+      labels.sort((a, b) => a.y - b.y);
+      const minGap = 18;
+      for (let i = 1; i < labels.length; i++) {
+        if (labels[i].y - labels[i-1].y < minGap) {
+          labels[i].y = labels[i-1].y + minGap;
+        }
+      }
+      
+      labels.forEach(l => {
+        const isMobile = window.innerWidth < 768;
+        const fontSize = isMobile ? 10 : 11;
+        ctx.font = `700 ${fontSize}px Pretendard, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        const valueText = formatKRW(l.value);
+        // 모바일은 라벨 단축
+        let displayLabel = l.text;
+        if (isMobile) {
+          displayLabel = displayLabel
+            .replace('재투자 O · 명목', 'O명목')
+            .replace('재투자 X · 명목', 'X명목')
+            .replace('재투자 O · 실질', 'O실질')
+            .replace('재투자 X · 실질', 'X실질')
+            .replace('배당 재투자 O', '재투자O')
+            .replace('배당 재투자 X', '재투자X')
+            .replace('누적 원금', '원금');
+        }
+        const text = `${displayLabel} ${valueText}`;
+        const textWidth = ctx.measureText(text).width;
+        const padX = isMobile ? 6 : 8;
+        const padY = isMobile ? 3 : 4;
+        const boxX = l.x + 6;
+        const boxY = l.y - (fontSize + padY*2) / 2;
+        const boxW = textWidth + padX * 2;
+        const boxH = fontSize + padY * 2;
+        const r = 4;
+        
+        // 박스 배경 (roundRect 폴백 포함)
+        ctx.fillStyle = '#FBF7F0';
+        ctx.strokeStyle = l.color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(boxX, boxY, boxW, boxH, r);
+        } else {
+          // 폴백: 일반 rect
+          ctx.moveTo(boxX + r, boxY);
+          ctx.lineTo(boxX + boxW - r, boxY);
+          ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+          ctx.lineTo(boxX + boxW, boxY + boxH - r);
+          ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - r, boxY + boxH);
+          ctx.lineTo(boxX + r, boxY + boxH);
+          ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+          ctx.lineTo(boxX, boxY + r);
+          ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+          ctx.closePath();
+        }
+        ctx.fill();
+        ctx.stroke();
+        
+        // 라인 끝점에서 박스로 연결되는 짧은 줄
+        ctx.beginPath();
+        ctx.strokeStyle = l.color;
+        ctx.lineWidth = 1;
+        ctx.moveTo(l.x, l.y);
+        ctx.lineTo(boxX, boxY + boxH/2);
+        ctx.stroke();
+        
+        // 텍스트
+        ctx.fillStyle = l.color;
+        ctx.fillText(text, boxX + padX, l.y);
+      });
+      
+      ctx.restore();
+    }
+  };
 
   chartArea = new Chart(ctx, {
     type: 'line',
@@ -1545,6 +1668,16 @@ function renderAreaChart(data) {
     },
     options: {
       ...chartCommonOptions,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      layout: {
+        padding: { 
+          right: window.innerWidth < 768 ? 100 : 160, 
+          top: 10, bottom: 10, left: 10 
+        }
+      },
       scales: {
         x: {
           grid: { display: false },
@@ -1561,14 +1694,20 @@ function renderAreaChart(data) {
       },
       plugins: {
         ...chartCommonOptions.plugins,
+        legend: { display: false },
         tooltip: {
           ...chartCommonOptions.plugins.tooltip,
+          mode: 'index',
+          intersect: false,
+          itemSort: (a, b) => b.parsed.y - a.parsed.y, // 큰 값이 위로
           callbacks: {
-            label: (ctx) => ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
+            title: (items) => items[0]?.label + ' 차',
+            label: (ctx) => '  ' + ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
           }
         }
       }
-    }
+    },
+    plugins: [endLabelPlugin]
   });
 }
 
@@ -1577,9 +1716,10 @@ function renderBarChart(data) {
   const ctx = document.getElementById('chart-bar').getContext('2d');
   const showLabels = data.years <= 25;
 
+  // 명목가치만 표시 (재투자 O / X)
   const datasets = [
     {
-      label: '배당 재투자 X (명목)',
+      label: '배당 재투자 X',
       data: data.yearlyData.map(d => d.noReinvestYearlyDiv),
       backgroundColor: '#C4A57B',
       borderRadius: 4,
@@ -1592,7 +1732,7 @@ function renderBarChart(data) {
       } : { display: false }
     },
     {
-      label: '배당 재투자 O (명목)',
+      label: '배당 재투자 O',
       data: data.yearlyData.map(d => d.yearlyDividend),
       backgroundColor: '#D9542B',
       borderRadius: 4,
@@ -1606,24 +1746,6 @@ function renderBarChart(data) {
     }
   ];
 
-  // 물가 ON: 실질가치 라인 오버레이
-  if (data.inflationOn) {
-    datasets.push({
-      type: 'line',
-      label: `재투자 O 배당 (실질·${data.inflationRate}% 물가반영)`,
-      data: data.yearlyData.map(d => d.realYearlyDividend),
-      borderColor: '#5A6B5A',
-      backgroundColor: '#5A6B5A',
-      borderWidth: 2.5,
-      borderDash: [8, 4],
-      tension: 0.3,
-      pointRadius: 2.5,
-      pointHoverRadius: 5,
-      fill: false,
-      datalabels: { display: false }
-    });
-  }
-
   chartBar = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -1632,6 +1754,10 @@ function renderBarChart(data) {
     },
     options: {
       ...chartCommonOptions,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
       layout: { padding: { top: 30 } },
       scales: {
         x: {
@@ -1651,8 +1777,108 @@ function renderBarChart(data) {
         ...chartCommonOptions.plugins,
         tooltip: {
           ...chartCommonOptions.plugins.tooltip,
+          mode: 'index',
+          intersect: false,
+          itemSort: (a, b) => b.parsed.y - a.parsed.y,
           callbacks: {
-            label: (ctx) => ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
+            title: (items) => items[0]?.label + ' 차',
+            label: (ctx) => '  ' + ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
+          }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
+// 실질가치 막대 차트 (물가 반영)
+let chartBarReal = null;
+function renderBarChartReal(data) {
+  const card = document.getElementById('chart-bar-real-card');
+  if (!data.inflationOn) {
+    card.style.display = 'none';
+    if (chartBarReal) { chartBarReal.destroy(); chartBarReal = null; }
+    return;
+  }
+  card.style.display = 'block';
+
+  if (chartBarReal) chartBarReal.destroy();
+  const ctx = document.getElementById('chart-bar-real').getContext('2d');
+  const showLabels = data.years <= 25;
+
+  // 실질가치 막대 (재투자 O / X)
+  const datasets = [
+    {
+      label: '재투자 X · 실질가치',
+      data: data.yearlyData.map(d => d.realNoReinvestYearlyDiv),
+      backgroundColor: '#A89274',
+      borderRadius: 4,
+      datalabels: showLabels ? {
+        anchor: 'end',
+        align: 'top',
+        color: '#5A4A3D',
+        font: { family: 'Pretendard', size: 9, weight: 700 },
+        formatter: (v) => formatKRW(v),
+      } : { display: false }
+    },
+    {
+      label: '재투자 O · 실질가치',
+      data: data.yearlyData.map(d => d.realYearlyDividend),
+      backgroundColor: '#A03D1F',
+      borderRadius: 4,
+      datalabels: showLabels ? {
+        anchor: 'end',
+        align: 'top',
+        color: '#A03D1F',
+        font: { family: 'Pretendard', size: 9, weight: 700 },
+        formatter: (v) => formatKRW(v),
+      } : { display: false }
+    }
+  ];
+
+  // 부제목 업데이트
+  const finalRow = data.yearlyData[data.yearlyData.length - 1];
+  document.getElementById('chart-bar-real-subtitle').innerHTML =
+    `물가 ${data.inflationRate}% 반영 시 ${data.years}년 후 받게 되는 배당의 <strong style="color: var(--accent);">진짜 구매력</strong>입니다. ` +
+    `명목 ${formatKRW(finalRow.yearlyDividend)}원이 실제로는 오늘 기준 <strong style="color: var(--accent);">${formatKRW(finalRow.realYearlyDividend)}원</strong> 가치`;
+
+  chartBarReal = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.yearlyData.map(d => d.year + '년'),
+      datasets: datasets
+    },
+    options: {
+      ...chartCommonOptions,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      layout: { padding: { top: 30 } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Pretendard', size: 12, weight: 600 }, color: '#8B8276' }
+        },
+        y: {
+          grid: { color: '#E5DCC8', borderDash: [3, 3] },
+          ticks: {
+            font: { family: 'Pretendard', size: 12, weight: 600 },
+            color: '#8B8276',
+            callback: (v) => formatKRW(v)
+          }
+        }
+      },
+      plugins: {
+        ...chartCommonOptions.plugins,
+        tooltip: {
+          ...chartCommonOptions.plugins.tooltip,
+          mode: 'index',
+          intersect: false,
+          itemSort: (a, b) => b.parsed.y - a.parsed.y,
+          callbacks: {
+            title: (items) => items[0]?.label + ' 차',
+            label: (ctx) => '  ' + ctx.dataset.label + ': ' + formatKRWFull(ctx.parsed.y)
           }
         }
       }
@@ -1697,6 +1923,10 @@ function renderLineChart(data) {
     },
     options: {
       ...chartCommonOptions,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
       scales: {
         x: {
           grid: { display: false },
@@ -1716,8 +1946,12 @@ function renderLineChart(data) {
         ...chartCommonOptions.plugins,
         tooltip: {
           ...chartCommonOptions.plugins.tooltip,
+          mode: 'index',
+          intersect: false,
+          itemSort: (a, b) => b.parsed.y - a.parsed.y,
           callbacks: {
-            label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y + '%'
+            title: (items) => items[0]?.label + ' 차',
+            label: (ctx) => '  ' + ctx.dataset.label + ': ' + ctx.parsed.y + '%'
           }
         }
       }
@@ -1860,9 +2094,9 @@ function renderResults(data) {
   document.getElementById('card4-value').textContent = formatKRW(s.finalMonthlyDividend);
   if (inflOn) {
     document.getElementById('card4-sub').innerHTML = 
-      `미재투자 시: ${formatKRW(s.noReinvestMonthlyDiv)}원<br><span style="color: var(--ink-mute);">실질 ${formatKRW(s.realMonthlyDividend)}원/월</span>`;
+      `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원<br><span style="color: var(--ink-mute);">실질 ${formatKRW(s.realMonthlyDividend)}원/월</span>`;
   } else {
-    document.getElementById('card4-sub').textContent = `미재투자 시: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+    document.getElementById('card4-sub').textContent = `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
   }
 
   document.getElementById('card5-value').textContent = formatKRW(s.totalPrincipal);
@@ -1890,20 +2124,32 @@ function renderResults(data) {
         <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
         <td class="col-reinvest-emph">
           ${formatKRWTable(row.totalValue)}
-          <div style="font-size: 10px; color: #5A6B5A; font-weight: 600; margin-top: 2px;">실질 ${formatKRWTable(row.realTotalValue)}</div>
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realTotalValue)}</div>
         </td>
         <td class="col-reinvest">
           ${formatKRWTable(row.monthlyDividend)}
-          <div style="font-size: 10px; color: #5A6B5A; font-weight: 600; margin-top: 2px;">실질 ${formatKRWTable(row.realMonthlyDividend)}</div>
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realMonthlyDividend)}</div>
         </td>
-        <td class="col-reinvest">${formatKRWTable(row.cumulativeDividend)}</td>
+        <td class="col-reinvest">
+          ${formatKRWTable(row.cumulativeDividend)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realCumulativeDividend)}</div>
+        </td>
         <td class="col-no-reinvest-emph">
           ${formatKRWTable(row.noReinvestTotal)}
-          <div style="font-size: 10px; color: #5A6B5A; font-weight: 600; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestTotal)}</div>
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestTotal)}</div>
         </td>
-        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDiv)}</td>
-        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCash)}</td>
-        <td class="col-gap">+${formatKRW(row.reinvestGap)}</td>
+        <td class="col-no-reinvest">
+          ${formatKRWTable(row.noReinvestMonthlyDiv)}
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestMonthlyDiv)}</div>
+        </td>
+        <td class="col-no-reinvest">
+          ${formatKRWTable(row.noReinvestCash)}
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestCash)}</div>
+        </td>
+        <td class="col-gap">
+          +${formatKRW(row.reinvestGap)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 +${formatKRW(row.realReinvestGap)}</div>
+        </td>
       `;
     } else {
       tr.innerHTML = `
@@ -1958,6 +2204,7 @@ function update() {
   renderResults(data);
   renderAreaChart(data);
   renderBarChart(data);
+  renderBarChartReal(data);
   renderLineChart(data);
   renderDonutCharts(data);
 }
