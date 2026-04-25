@@ -145,6 +145,107 @@
     margin-top: 6px; font-weight: 600;
   }
 
+  /* 물가상승률 섹션 */
+  .inflation-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--border);
+  }
+  .inflation-toggle-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+  .inflation-text-area {
+    flex: 1;
+    min-width: 0;
+  }
+  .inflation-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 4px;
+    letter-spacing: -0.2px;
+  }
+  .inflation-desc {
+    font-size: 13px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .inflation-desc strong {
+    color: var(--accent);
+    font-weight: 800;
+  }
+  .inflation-input-wrap {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--accent-soft);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .inflation-input-wrap .label {
+    margin-bottom: 0 !important;
+    color: var(--accent) !important;
+    font-weight: 800 !important;
+    text-transform: none !important;
+    font-size: 13px !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap;
+  }
+  .inflation-input-wrap input {
+    background: var(--white);
+    border-color: var(--accent);
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .inflation-input-wrap .input-hint {
+    color: var(--accent);
+    margin-top: 0;
+  }
+
+  /* 토글 스위치 */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #C4B8A3;
+    transition: 0.25s;
+    border-radius: 30px;
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px; width: 22px;
+    left: 4px; bottom: 4px;
+    background: var(--white);
+    transition: 0.25s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch input:checked + .toggle-slider {
+    background: var(--accent);
+  }
+  .toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+  }
+
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
@@ -537,12 +638,200 @@
   @media (max-width: 1100px) {
     .donut-grid { grid-template-columns: repeat(3, 1fr) !important; }
   }
+
+  /* ============================================
+     모바일 전용 (768px 이하) - PC는 절대 영향 X
+     ============================================ */
   @media (max-width: 768px) {
-    .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr !important; }
-    .grid-4 { grid-template-columns: 1fr 1fr !important; }
-    .holding-grid { grid-template-columns: 1fr 1fr !important; }
-    .hero-title { font-size: 42px !important; }
-    .donut-grid { grid-template-columns: 1fr 1fr !important; }
+    body {
+      padding: 16px 12px;
+    }
+    .container { padding: 0; }
+
+    /* 카드 패딩 축소 */
+    .card { 
+      padding: 18px 16px !important; 
+      margin-bottom: 20px !important;
+      border-radius: 16px !important;
+    }
+
+    /* 헤더 */
+    header { margin-bottom: 28px; }
+
+    /* 히어로 */
+    .hero { margin-bottom: 32px; }
+    .hero-title { 
+      font-size: 32px !important; 
+      letter-spacing: -1.2px !important;
+      line-height: 1.15 !important;
+    }
+    .hero-desc { font-size: 14px; line-height: 1.6; }
+    .hero-desc br { display: none; } /* 모바일은 자동 줄바꿈 */
+    .tag { font-size: 11px; padding: 5px 12px; margin-bottom: 20px; }
+
+    /* 상단 CTA - 세로 정렬 */
+    .top-cta {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .top-cta-text { font-size: 13px; line-height: 1.5; }
+    .top-cta-links { 
+      width: 100%; 
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .top-cta-link { 
+      justify-content: center; 
+      font-size: 12px; 
+      padding: 10px 8px;
+    }
+
+    /* 모든 그리드를 1열로 */
+    .grid-3, .grid-2 { 
+      grid-template-columns: 1fr !important; 
+      gap: 14px !important;
+    }
+    .grid-4 { 
+      grid-template-columns: 1fr 1fr !important; 
+      gap: 10px !important;
+    }
+
+    /* 종목 입력 - 컴팩트 모드 */
+    .holdings-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .holdings-header .btn {
+      align-self: flex-end;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+    .holding-row { padding: 14px 12px; }
+    .holding-grid {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 10px !important;
+    }
+    /* 종목 선택은 전체 너비 차지 */
+    .holding-grid > div:first-child {
+      grid-column: 1 / -1;
+    }
+    /* 삭제 버튼은 별도 행 마지막에 */
+    .holding-grid > button {
+      grid-column: 1 / -1;
+      justify-self: end;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 입력 필드 사이즈 축소 */
+    input, select { 
+      padding: 9px 12px; 
+      font-size: 14px; 
+    }
+    .label { font-size: 10px; }
+
+    /* 물가 섹션 모바일 */
+    .inflation-toggle-wrap {
+      gap: 14px;
+    }
+    .inflation-title { font-size: 14px; }
+    .inflation-desc { font-size: 12px; line-height: 1.5; }
+    .inflation-input-wrap {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      padding: 12px;
+    }
+    .inflation-input-wrap input { max-width: 100% !important; }
+
+    /* 결과 카드 */
+    .stat-card { padding: 16px !important; border-radius: 14px !important; }
+    .stat-label { font-size: 10px; }
+    .stat-value { font-size: 22px !important; letter-spacing: -0.5px !important; }
+    .stat-sub { font-size: 11px; }
+
+    /* 차트 */
+    .chart-title { font-size: 15px; line-height: 1.4; }
+    .chart-subtitle { font-size: 12px; line-height: 1.5; margin-bottom: 16px; }
+    .chart-container { height: 260px !important; }
+    .chart-container.lg { height: 280px !important; }
+    .chart-container.sm { height: 240px !important; }
+
+    /* 도넛 그리드 - 2열로 */
+    .donut-grid { 
+      grid-template-columns: 1fr 1fr !important; 
+      gap: 16px !important;
+    }
+    .donut-canvas-wrap { height: 130px; max-width: 140px; }
+    .donut-year-label { font-size: 12px; }
+    .donut-detail { font-size: 10px; }
+    .donut-detail-row { padding: 2px 5px; }
+
+    /* Step label */
+    .step-label { margin-bottom: 18px; }
+    .step-text { font-size: 11px; }
+
+    /* 인사이트 박스 */
+    .insight-box { padding: 24px 18px; border-radius: 16px; }
+    .insight-title { font-size: 18px !important; line-height: 1.35; }
+    .insight-desc { font-size: 13px; line-height: 1.6; }
+    .insight-cta {
+      flex-direction: column;
+      align-items: stretch;
+      padding-top: 18px;
+      margin-top: 20px;
+      gap: 10px;
+    }
+    .insight-cta-text { font-size: 13px; margin-right: 0; margin-bottom: 4px; }
+    .cta-link {
+      justify-content: center;
+      font-size: 13px;
+      padding: 12px 16px;
+    }
+
+    /* 테이블 - 가로 스크롤 강제 */
+    .table-wrap { 
+      margin: 16px -16px 0;
+      padding: 0 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .data-table {
+      font-size: 11px;
+      min-width: 720px; /* 가로 스크롤 가능하게 */
+    }
+    .data-table th {
+      padding: 8px 6px;
+      font-size: 10px;
+    }
+    .data-table td {
+      padding: 8px 6px;
+    }
+
+    /* 비중 합계 */
+    .holdings-summary { font-size: 12px; }
+
+    /* 푸터 */
+    footer { padding: 24px 0 16px; font-size: 11px; }
+  }
+
+  /* 더 작은 모바일 (375px 이하) */
+  @media (max-width: 380px) {
+    .hero-title { font-size: 28px !important; }
+    .grid-4 { 
+      grid-template-columns: 1fr !important; 
+    }
+    .donut-grid { 
+      grid-template-columns: 1fr !important; 
+    }
+    .top-cta-links { grid-template-columns: 1fr !important; }
   }
 
   /* 결과 영역 숨김 (초기) */
@@ -618,6 +907,28 @@
         <label class="label">투자 기간</label>
         <input type="number" id="years" value="20" min="1" max="50">
         <div class="input-hint" id="years-hint">20년 후 결과</div>
+      </div>
+    </div>
+
+    <!-- 물가상승률 옵션 -->
+    <div class="inflation-section">
+      <div class="inflation-toggle-wrap">
+        <div class="inflation-text-area">
+          <div class="inflation-title">💰 물가상승률 반영하기</div>
+          <div class="inflation-desc">
+            ON으로 켜면 미래 자산을 <strong>오늘 돈 가치(실질가치)</strong>로 환산해서 보여줍니다. 
+            "20년 뒤 5억"이 지금 돈으로 얼마인지 정확히 보세요.
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="inflation-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="inflation-input-wrap" id="inflation-input-wrap" style="display: none;">
+        <label class="label" style="margin-bottom: 0;">연간 물가상승률 (%)</label>
+        <input type="number" id="inflation-rate" value="2.5" step="0.1" min="0" max="20" style="max-width: 200px;">
+        <div class="input-hint" style="margin-top: 0;">한국 장기 평균 약 2.5%</div>
       </div>
     </div>
   </div>
@@ -817,9 +1128,9 @@ const CHART_COLORS = ['#D9542B', '#E89A6F', '#8B6F47', '#C4A57B', '#5A6B5A'];
 
 // 상태
 let holdings = [
-  { id: 1, preset: 'SCHD', weight: 50, dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
-  { id: 2, preset: 'JEPI', weight: 30, dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
-  { id: 3, preset: 'VOO',  weight: 20, dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
+  { id: 1, preset: 'SCHD', customName: '', weight: 50, dividendYield: 3.5, dividendGrowth: 11.0, priceGrowth: 8.0 },
+  { id: 2, preset: 'JEPI', customName: '', weight: 30, dividendYield: 7.5, dividendGrowth: 2.0,  priceGrowth: 4.0 },
+  { id: 3, preset: 'VOO',  customName: '', weight: 20, dividendYield: 1.3, dividendGrowth: 6.0,  priceGrowth: 10.0 },
 ];
 
 // Chart.js 인스턴스 보관
@@ -843,6 +1154,14 @@ function formatKRWTable(n) {
   if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만';
   if (n >= 1000) return Math.round(n).toLocaleString();
   return Math.round(n).toLocaleString();
+}
+
+// 종목명 가져오기 (커스텀이면 customName 우선)
+function getHoldingDisplayName(h) {
+  if (h.preset === '커스텀') {
+    return (h.customName && h.customName.trim()) ? h.customName.trim() : '커스텀';
+  }
+  return PRESETS[h.preset]?.name || '커스텀';
 }
 
 // ============================================================
@@ -873,11 +1192,22 @@ function renderHoldings() {
       presetOptions += `</optgroup>`;
     });
 
+    const isCustom = h.preset === '커스텀';
+
     row.innerHTML = `
       <div class="holding-grid">
         <div>
           <label class="label">종목 / 프리셋</label>
           <select data-id="${h.id}" data-field="preset">${presetOptions}</select>
+          ${isCustom ? `
+            <input type="text" 
+              data-id="${h.id}" 
+              data-field="customName" 
+              value="${h.customName || ''}" 
+              placeholder="종목명 입력 (예: 삼성전자)" 
+              style="margin-top: 8px; font-size: 14px;"
+              maxlength="20">
+          ` : ''}
         </div>
         <div>
           <label class="label">비중 (%)</label>
@@ -941,7 +1271,12 @@ function handleHoldingChange(e) {
     h.dividendYield = p.dividendYield;
     h.dividendGrowth = p.dividendGrowth;
     h.priceGrowth = p.priceGrowth;
+    // 커스텀이 아니면 customName 비우기
+    if (value !== '커스텀') h.customName = '';
     renderHoldings(); // 프리셋 바뀌면 입력값도 업데이트해야 하니 다시 렌더
+  } else if (field === 'customName') {
+    // 텍스트 입력은 그대로 저장 (재렌더 안 함, 포커스 유지)
+    h.customName = value;
   } else {
     h[field] = Number(value);
     if (field === 'weight') {
@@ -959,7 +1294,7 @@ function handleHoldingChange(e) {
 document.getElementById('add-holding-btn').addEventListener('click', () => {
   if (holdings.length >= 5) return;
   const newId = Math.max(...holdings.map(h => h.id)) + 1;
-  holdings.push({ id: newId, preset: '커스텀', weight: 0, dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 });
+  holdings.push({ id: newId, preset: '커스텀', customName: '', weight: 0, dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 });
   renderHoldings();
   update();
 });
@@ -972,12 +1307,14 @@ function simulate() {
   const monthly = Number(document.getElementById('monthly').value) || 0;
   const years = Math.max(1, Math.min(50, Number(document.getElementById('years').value) || 1));
   const totalWeight = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
+  const inflationOn = document.getElementById('inflation-toggle').checked;
+  const inflationRate = inflationOn ? (Number(document.getElementById('inflation-rate').value) || 0) / 100 : 0;
 
   if (totalWeight === 0) return null;
 
   // 재투자 O
   const stockStates = holdings.map(h => ({
-    name: PRESETS[h.preset]?.name || '커스텀',
+    name: getHoldingDisplayName(h),
     principal: 0, value: 0,
     yieldRate: h.dividendYield / 100,
     growth: h.dividendGrowth / 100,
@@ -987,7 +1324,7 @@ function simulate() {
   }));
   // 재투자 X
   const noReStates = holdings.map(h => ({
-    name: PRESETS[h.preset]?.name || '커스텀',
+    name: getHoldingDisplayName(h),
     principal: 0, value: 0, cashDividends: 0,
     yieldRate: h.dividendYield / 100,
     growth: h.dividendGrowth / 100,
@@ -1040,6 +1377,9 @@ function simulate() {
     const noReTotal = noReValue + noReCash;
     const noReYearlyDiv = noReStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
 
+    // 물가상승률 누적 디플레이터 (year년 후 1원의 현재 가치)
+    const deflator = inflationOn ? Math.pow(1 + inflationRate, year) : 1;
+
     const row = {
       year,
       totalValue: Math.round(totalValue),
@@ -1055,6 +1395,16 @@ function simulate() {
       noReinvestMonthlyDiv: Math.round(noReYearlyDiv / 12),
       noReinvestReturnRate: parseFloat(((noReTotal / totalPrincipal - 1) * 100).toFixed(1)),
       reinvestGap: Math.round(totalValue - noReTotal),
+      // 실질가치 (현재 돈 가치 기준) - 물가 반영 시에만 의미 있음
+      realTotalValue: Math.round(totalValue / deflator),
+      realNoReinvestTotal: Math.round(noReTotal / deflator),
+      realMonthlyDividend: Math.round(totalDividend / 12 / deflator),
+      realNoReinvestMonthlyDiv: Math.round(noReYearlyDiv / 12 / deflator),
+      realYearlyDividend: Math.round(totalDividend / deflator),
+      realNoReinvestYearlyDiv: Math.round(noReYearlyDiv / deflator),
+      realCumulativeDividend: Math.round(totalCumDiv / deflator),
+      realNoReinvestCash: Math.round(noReCash / deflator),
+      realReinvestGap: Math.round((totalValue - noReTotal) / deflator),
       stockWeights: stockStates.map(s => ({
         name: s.name,
         weight: parseFloat(((s.value / totalValue) * 100).toFixed(1))
@@ -1075,9 +1425,19 @@ function simulate() {
     noReinvestMonthlyDiv: finalYear.noReinvestMonthlyDiv,
     reinvestGap: finalYear.reinvestGap,
     reinvestGapPercent: ((finalYear.totalValue / finalYear.noReinvestTotal - 1) * 100).toFixed(1),
+    // 실질가치
+    realFinalValue: finalYear.realTotalValue,
+    realNoReinvestTotal: finalYear.realNoReinvestTotal,
+    realMonthlyDividend: finalYear.realMonthlyDividend,
+    realNoReinvestMonthlyDiv: finalYear.realNoReinvestMonthlyDiv,
+    realCumulativeDividend: finalYear.realCumulativeDividend,
+    realReinvestGap: finalYear.realReinvestGap,
+    // 물가 손실율 (명목 - 실질)
+    inflationLoss: finalYear.totalValue - finalYear.realTotalValue,
+    inflationLossPercent: (((finalYear.totalValue - finalYear.realTotalValue) / finalYear.totalValue) * 100).toFixed(1),
   };
 
-  return { yearlyData, summary, years, initial, monthly };
+  return { yearlyData, summary, years, initial, monthly, inflationOn, inflationRate: inflationRate * 100 };
 }
 
 // ============================================================
@@ -1125,45 +1485,63 @@ function renderAreaChart(data) {
   gradInk.addColorStop(0, 'rgba(74, 74, 74, 0.2)');
   gradInk.addColorStop(1, 'rgba(74, 74, 74, 0.03)');
 
+  const datasets = [
+    {
+      label: '누적 원금',
+      data: data.yearlyData.map(d => d.totalPrincipal),
+      borderColor: '#4A4A4A',
+      borderWidth: 1.5,
+      borderDash: [4, 4],
+      backgroundColor: gradInk,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+    },
+    {
+      label: '배당 재투자 X (명목)',
+      data: data.yearlyData.map(d => d.noReinvestTotal),
+      borderColor: '#8B6F47',
+      borderWidth: 2.5,
+      backgroundColor: gradBrown,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    },
+    {
+      label: '배당 재투자 O (명목)',
+      data: data.yearlyData.map(d => d.totalValue),
+      borderColor: '#D9542B',
+      borderWidth: 3,
+      backgroundColor: gradAccent,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+    }
+  ];
+
+  // 물가상승률 ON일 때 실질가치 라인 추가
+  if (data.inflationOn) {
+    datasets.push({
+      label: `재투자 O (실질·${data.inflationRate}% 물가반영)`,
+      data: data.yearlyData.map(d => d.realTotalValue),
+      borderColor: '#5A6B5A',
+      borderWidth: 2.5,
+      borderDash: [8, 4],
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+    });
+  }
+
   chartArea = new Chart(ctx, {
     type: 'line',
     data: {
       labels: data.yearlyData.map(d => d.year + '년'),
-      datasets: [
-        {
-          label: '누적 원금',
-          data: data.yearlyData.map(d => d.totalPrincipal),
-          borderColor: '#4A4A4A',
-          borderWidth: 1.5,
-          borderDash: [4, 4],
-          backgroundColor: gradInk,
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-        },
-        {
-          label: '배당 재투자 X',
-          data: data.yearlyData.map(d => d.noReinvestTotal),
-          borderColor: '#8B6F47',
-          borderWidth: 2.5,
-          backgroundColor: gradBrown,
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-        },
-        {
-          label: '배당 재투자 O',
-          data: data.yearlyData.map(d => d.totalValue),
-          borderColor: '#D9542B',
-          borderWidth: 3,
-          backgroundColor: gradAccent,
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 6,
-        }
-      ]
+      datasets: datasets
     },
     options: {
       ...chartCommonOptions,
@@ -1199,38 +1577,58 @@ function renderBarChart(data) {
   const ctx = document.getElementById('chart-bar').getContext('2d');
   const showLabels = data.years <= 25;
 
+  const datasets = [
+    {
+      label: '배당 재투자 X (명목)',
+      data: data.yearlyData.map(d => d.noReinvestYearlyDiv),
+      backgroundColor: '#C4A57B',
+      borderRadius: 4,
+      datalabels: showLabels ? {
+        anchor: 'end',
+        align: 'top',
+        color: '#8B6F47',
+        font: { family: 'Pretendard', size: 9, weight: 700 },
+        formatter: (v) => formatKRW(v),
+      } : { display: false }
+    },
+    {
+      label: '배당 재투자 O (명목)',
+      data: data.yearlyData.map(d => d.yearlyDividend),
+      backgroundColor: '#D9542B',
+      borderRadius: 4,
+      datalabels: showLabels ? {
+        anchor: 'end',
+        align: 'top',
+        color: '#D9542B',
+        font: { family: 'Pretendard', size: 9, weight: 700 },
+        formatter: (v) => formatKRW(v),
+      } : { display: false }
+    }
+  ];
+
+  // 물가 ON: 실질가치 라인 오버레이
+  if (data.inflationOn) {
+    datasets.push({
+      type: 'line',
+      label: `재투자 O 배당 (실질·${data.inflationRate}% 물가반영)`,
+      data: data.yearlyData.map(d => d.realYearlyDividend),
+      borderColor: '#5A6B5A',
+      backgroundColor: '#5A6B5A',
+      borderWidth: 2.5,
+      borderDash: [8, 4],
+      tension: 0.3,
+      pointRadius: 2.5,
+      pointHoverRadius: 5,
+      fill: false,
+      datalabels: { display: false }
+    });
+  }
+
   chartBar = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: data.yearlyData.map(d => d.year + '년'),
-      datasets: [
-        {
-          label: '배당 재투자 X',
-          data: data.yearlyData.map(d => d.noReinvestYearlyDiv),
-          backgroundColor: '#C4A57B',
-          borderRadius: 4,
-          datalabels: showLabels ? {
-            anchor: 'end',
-            align: 'top',
-            color: '#8B6F47',
-            font: { family: 'Pretendard', size: 9, weight: 700 },
-            formatter: (v) => formatKRW(v),
-          } : { display: false }
-        },
-        {
-          label: '배당 재투자 O',
-          data: data.yearlyData.map(d => d.yearlyDividend),
-          backgroundColor: '#D9542B',
-          borderRadius: 4,
-          datalabels: showLabels ? {
-            anchor: 'end',
-            align: 'top',
-            color: '#D9542B',
-            font: { family: 'Pretendard', size: 9, weight: 700 },
-            formatter: (v) => formatKRW(v),
-          } : { display: false }
-        }
-      ]
+      datasets: datasets
     },
     options: {
       ...chartCommonOptions,
@@ -1441,11 +1839,17 @@ function renderDonutCharts(data) {
 function renderResults(data) {
   const s = data.summary;
   const years = data.years;
+  const inflOn = data.inflationOn;
 
-  // 카드들
+  // 카드들 - 물가 ON이면 실질가치 추가 표시
   document.getElementById('card1-label').textContent = `${years}년 후 자산 (재투자 O)`;
   document.getElementById('card1-value').textContent = formatKRW(s.finalValue);
-  document.getElementById('card1-sub').textContent = `원금의 ${s.multiplier}배`;
+  if (inflOn) {
+    document.getElementById('card1-sub').innerHTML = 
+      `원금의 ${s.multiplier}배 · <span style="color: #D9D2C5;">실질 ${formatKRW(s.realFinalValue)}원</span>`;
+  } else {
+    document.getElementById('card1-sub').textContent = `원금의 ${s.multiplier}배`;
+  }
 
   document.getElementById('card2-label').textContent = `${years}년 후 자산 (재투자 X)`;
   document.getElementById('card2-value').textContent = formatKRW(s.noReinvestTotal);
@@ -1454,44 +1858,86 @@ function renderResults(data) {
   document.getElementById('card3-sub').textContent = `${s.reinvestGapPercent}% 더 많음`;
 
   document.getElementById('card4-value').textContent = formatKRW(s.finalMonthlyDividend);
-  document.getElementById('card4-sub').textContent = `미재투자 시: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+  if (inflOn) {
+    document.getElementById('card4-sub').innerHTML = 
+      `미재투자 시: ${formatKRW(s.noReinvestMonthlyDiv)}원<br><span style="color: var(--ink-mute);">실질 ${formatKRW(s.realMonthlyDividend)}원/월</span>`;
+  } else {
+    document.getElementById('card4-sub').textContent = `미재투자 시: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+  }
 
   document.getElementById('card5-value').textContent = formatKRW(s.totalPrincipal);
   document.getElementById('card6-value').textContent = formatKRW(s.cumulativeDividend);
 
   // 차트 1 부제목
-  document.getElementById('chart1-subtitle').innerHTML = 
-    `같은 종목 같은 금액인데 배당 재투자 여부에 따라 <strong style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</strong> 차이가 납니다 (${s.reinvestGapPercent}% 더 많음)`;
+  let subtitle1 = `같은 종목 같은 금액인데 배당 재투자 여부에 따라 <strong style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</strong> 차이가 납니다 (${s.reinvestGapPercent}% 더 많음)`;
+  if (inflOn) {
+    subtitle1 += `<br><span style="color: #5A6B5A; font-weight: 700;">⚠️ 물가 ${data.inflationRate}% 반영 시 ${years}년 후 ${formatKRW(s.finalValue)}원의 실질 가치는 오늘 기준 ${formatKRW(s.realFinalValue)}원 (${s.inflationLossPercent}% 가치 하락)</span>`;
+  }
+  document.getElementById('chart1-subtitle').innerHTML = subtitle1;
 
-  // 테이블
+  // 테이블 - 물가 ON이면 실질가치 행도 같이 표시
   const tbody = document.getElementById('data-table-body');
   tbody.innerHTML = '';
   data.yearlyData.forEach(row => {
     const isFinal = row.year === years;
     const tr = document.createElement('tr');
     if (isFinal) tr.className = 'highlight-row';
-    tr.innerHTML = `
-      <td>${row.year}년</td>
-      <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
-      <td class="col-reinvest-emph">${formatKRWTable(row.totalValue)}</td>
-      <td class="col-reinvest">${formatKRWTable(row.monthlyDividend)}</td>
-      <td class="col-reinvest">${formatKRWTable(row.cumulativeDividend)}</td>
-      <td class="col-no-reinvest-emph">${formatKRWTable(row.noReinvestTotal)}</td>
-      <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDiv)}</td>
-      <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCash)}</td>
-      <td class="col-gap">+${formatKRW(row.reinvestGap)}</td>
-    `;
+    
+    if (inflOn) {
+      // 물가 ON: 명목 + 실질을 한 행에 같이 (작은 글씨로 실질 표시)
+      tr.innerHTML = `
+        <td>${row.year}년</td>
+        <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
+        <td class="col-reinvest-emph">
+          ${formatKRWTable(row.totalValue)}
+          <div style="font-size: 10px; color: #5A6B5A; font-weight: 600; margin-top: 2px;">실질 ${formatKRWTable(row.realTotalValue)}</div>
+        </td>
+        <td class="col-reinvest">
+          ${formatKRWTable(row.monthlyDividend)}
+          <div style="font-size: 10px; color: #5A6B5A; font-weight: 600; margin-top: 2px;">실질 ${formatKRWTable(row.realMonthlyDividend)}</div>
+        </td>
+        <td class="col-reinvest">${formatKRWTable(row.cumulativeDividend)}</td>
+        <td class="col-no-reinvest-emph">
+          ${formatKRWTable(row.noReinvestTotal)}
+          <div style="font-size: 10px; color: #5A6B5A; font-weight: 600; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestTotal)}</div>
+        </td>
+        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDiv)}</td>
+        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCash)}</td>
+        <td class="col-gap">+${formatKRW(row.reinvestGap)}</td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${row.year}년</td>
+        <td style="color: var(--ink-soft);">${formatKRWTable(row.totalPrincipal)}</td>
+        <td class="col-reinvest-emph">${formatKRWTable(row.totalValue)}</td>
+        <td class="col-reinvest">${formatKRWTable(row.monthlyDividend)}</td>
+        <td class="col-reinvest">${formatKRWTable(row.cumulativeDividend)}</td>
+        <td class="col-no-reinvest-emph">${formatKRWTable(row.noReinvestTotal)}</td>
+        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDiv)}</td>
+        <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCash)}</td>
+        <td class="col-gap">+${formatKRW(row.reinvestGap)}</td>
+      `;
+    }
     tbody.appendChild(tr);
   });
 
   // 인사이트
   document.getElementById('insight-title').innerHTML = 
     `${years}년 후, 배당 재투자 한 사람과 안 한 사람의 차이는 <span style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</span>`;
-  document.getElementById('insight-desc').innerHTML = 
-    `초기 ${formatKRW(data.initial)}원 + 월 ${formatKRW(data.monthly)}원 적립으로 시작했을 때, ` +
+  
+  let insightDesc = `초기 ${formatKRW(data.initial)}원 + 월 ${formatKRW(data.monthly)}원 적립으로 시작했을 때, ` +
     `재투자한 사람은 <strong>${formatKRW(s.finalValue)}원</strong> · 월 배당 <strong style="color: var(--accent);">${formatKRW(s.finalMonthlyDividend)}원</strong>, ` +
     `재투자하지 않은 사람은 <strong style="color: #C4A57B;">${formatKRW(s.noReinvestTotal)}원</strong> · 월 배당 <strong style="color: #C4A57B;">${formatKRW(s.noReinvestMonthlyDiv)}원</strong>입니다. ` +
     `같은 종목 같은 금액을 사도, 들어오는 배당을 다시 투자하느냐 마느냐가 <strong>${s.reinvestGapPercent}%의 격차</strong>를 만듭니다.`;
+  
+  if (inflOn) {
+    insightDesc += `<br><br>📉 <strong style="color: #B8C4B8;">하지만 물가 ${data.inflationRate}%를 반영하면</strong> 이야기가 달라집니다. ` +
+      `${years}년 후 ${formatKRW(s.finalValue)}원의 <strong>오늘 기준 실질 가치는 ${formatKRW(s.realFinalValue)}원</strong>으로, ` +
+      `<strong style="color: var(--accent);">${s.inflationLossPercent}% 만큼 가치가 떨어집니다.</strong> ` +
+      `월 배당 ${formatKRW(s.finalMonthlyDividend)}원도 실제 구매력은 <strong>오늘 기준 ${formatKRW(s.realMonthlyDividend)}원</strong> 수준입니다. ` +
+      `이게 바로 "현금으로만 들고 있으면 안 되는 이유"이자, 배당성장률이 물가상승률을 이겨야 하는 이유입니다.`;
+  }
+  document.getElementById('insight-desc').innerHTML = insightDesc;
 }
 
 // ============================================================
@@ -1520,6 +1966,14 @@ function update() {
 ['initial', 'monthly', 'years'].forEach(id => {
   document.getElementById(id).addEventListener('input', update);
 });
+
+// 물가상승률 토글
+document.getElementById('inflation-toggle').addEventListener('change', (e) => {
+  const wrap = document.getElementById('inflation-input-wrap');
+  wrap.style.display = e.target.checked ? 'flex' : 'none';
+  update();
+});
+document.getElementById('inflation-rate').addEventListener('input', update);
 
 // 초기화
 renderHoldings();
