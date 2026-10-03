@@ -892,7 +892,7 @@
   .combo-group { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: 0.5px; padding: 12px 14px 4px; }
   .combo-opt { padding: 9px 14px; cursor: pointer; border-left: 3px solid transparent; }
   .combo-opt:hover, .combo-opt.active { background: var(--bg-alt); border-left-color: var(--accent); }
-  .combo-opt.custom { border-top: 1px dashed var(--border); margin-top: 6px; }
+  .combo-opt.custom { border-bottom: 1px dashed var(--border); margin-bottom: 4px; padding-top: 11px; padding-bottom: 11px; }
   .opt-name { font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.35; }
   .opt-star { margin-left: 6px; font-size: 10px; font-weight: 800; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; vertical-align: 1px; }
   .opt-sub { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 3px; font-size: 12px; color: var(--ink-mute); font-weight: 600; }
@@ -1646,6 +1646,7 @@ function renderComboList(listEl, query) {
   let html = `<div class="combo-tabs">${tabs}</div>`;
   let idx = 0;
   if (!q) {
+    html += `<div class="combo-opt custom" data-key="CUSTOM" data-idx="${idx++}"><div class="opt-name">⚙️ 직접 입력</div><div class="opt-sub"><span>배당률·성장률을 직접 넣는 종목</span></div></div>`;
     const grouped = {};
     Object.entries(PRESETS).forEach(([k, p]) => {
       if (k === '커스텀') return;
@@ -1659,15 +1660,14 @@ function renderComboList(listEl, query) {
       html += `<div class="combo-group">추천 · ${escapeHtml(g.replace(/^\S+\s/, ''))}</div>`;
       keys.forEach(k => { html += optionHtml(k, idx++); });
     });
-    html += `<div class="combo-opt custom" data-key="CUSTOM" data-idx="${idx++}"><div class="opt-name">⚙️ 직접 입력</div><div class="opt-sub"><span>배당률·성장률을 직접 넣는 종목</span></div></div>`;
   } else {
     const loading = DATA_STATE.kr === 'loading' || DATA_STATE.us === 'loading';
     const results = searchUniverse(q);
+    html += `<div class="combo-opt custom" data-key="CUSTOM" data-name="${escapeHtml(q)}" data-idx="${idx++}"><div class="opt-name">⚙️ ‘${escapeHtml(q)}’ 직접 입력으로 추가</div><div class="opt-sub"><span>배당률·성장률을 직접 넣습니다</span></div></div>`;
     if (results.length) results.forEach(it => { html += optionHtml(it.key, idx++); });
     else if (!loading) html += `<div class="combo-empty">‘${escapeHtml(q)}’ 검색 결과가 없습니다</div>`;
     if (loading) html += `<div class="combo-empty">종목 데이터를 불러오는 중입니다…</div>`;
     if (DATA_STATE.kr === 'error' || DATA_STATE.us === 'error') html += `<div class="combo-empty">일부 종목 데이터를 불러오지 못했습니다. 새로고침해 주세요</div>`;
-    html += `<div class="combo-opt custom" data-key="CUSTOM" data-name="${escapeHtml(q)}" data-idx="${idx++}"><div class="opt-name">⚙️ ‘${escapeHtml(q)}’ 직접 입력으로 추가</div><div class="opt-sub"><span>배당률·성장률을 직접 넣습니다</span></div></div>`;
   }
   listEl.innerHTML = html;
   listEl.dataset.active = '-1';
@@ -1852,7 +1852,7 @@ function bindCombo(input) {
       list.dataset.active = String(a);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const pick = opts[a >= 0 ? a : 0];
+      const pick = a >= 0 ? opts[a] : (opts.find(x => x.dataset.key !== 'CUSTOM') || opts[0]);
       if (pick && input.value.trim()) choose(pick);
     } else if (e.key === 'Escape') {
       input.blur();
