@@ -863,6 +863,73 @@
     .top-cta-links { grid-template-columns: 1fr !important; }
   }
 
+
+  /* ===== 전체 종목 검색 콤보 ===== */
+  .combo { position: relative; }
+  .combo-input { padding-right: 36px !important; }
+  .combo-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-mute); pointer-events: none; }
+  .combo-list {
+    position: absolute; left: 0; top: calc(100% + 6px);
+    width: max(100%, 380px); max-width: calc(100vw - 32px);
+    max-height: 360px; overflow-y: auto;
+    background: var(--white); border: 1.5px solid var(--accent);
+    border-radius: 12px; box-shadow: 0 12px 32px rgba(58, 47, 38, 0.18);
+    z-index: 50; padding-bottom: 6px;
+  }
+  .combo-list[hidden] { display: none; }
+  .combo-tabs {
+    position: sticky; top: 0; z-index: 1;
+    display: flex; gap: 6px; padding: 10px 10px 8px;
+    background: var(--white); border-bottom: 1px solid var(--border);
+  }
+  .mkt-tab {
+    border: 1.5px solid var(--border); background: var(--white); color: var(--ink-soft);
+    border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .mkt-tab.on { background: var(--dark-warm); border-color: var(--dark-warm); color: var(--white); }
+  .combo-hint { font-size: 12px; color: var(--ink-mute); padding: 10px 14px 2px; }
+  .combo-hint b { color: var(--accent); }
+  .combo-group { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: 0.5px; padding: 12px 14px 4px; }
+  .combo-opt { padding: 9px 14px; cursor: pointer; border-left: 3px solid transparent; }
+  .combo-opt:hover, .combo-opt.active { background: var(--bg-alt); border-left-color: var(--accent); }
+  .combo-opt.custom { border-top: 1px dashed var(--border); margin-top: 6px; }
+  .opt-name { font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+  .opt-star { margin-left: 6px; font-size: 10px; font-weight: 800; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; vertical-align: 1px; }
+  .opt-sub { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 3px; font-size: 12px; color: var(--ink-mute); font-weight: 600; }
+  .combo-empty { font-size: 13px; color: var(--ink-mute); padding: 12px 14px; }
+  .kbadge { font-size: 10px; font-weight: 800; border-radius: 4px; padding: 1px 6px; }
+  .kbadge.kr { background: #E8EEF6; color: #2F4F7F; }
+  .kbadge.us { background: #F4E4DA; color: #9A3B1C; }
+
+  /* 종목 하단 정보줄 */
+  .holding-meta { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--ink-soft); line-height: 1.6; font-weight: 500; }
+  .meta-line b { color: var(--ink); font-weight: 700; }
+  .meta-line.warn { color: #B03A1A; font-weight: 700; }
+  .meta-btn {
+    border: 1px solid var(--accent); background: var(--white); color: var(--accent);
+    border-radius: 999px; padding: 2px 10px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+  }
+  .meta-btn:hover { background: var(--accent); color: var(--white); }
+
+  /* 데이터 상태 */
+  .data-status { margin-top: 6px; font-size: 12px; color: var(--ink-mute); font-weight: 600; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  .ds-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--beige-gold); display: inline-block; margin-right: 4px; }
+  .ds-dot.ok { background: #4E8B5F; }
+  .ds-date { color: var(--ink-mute); font-weight: 500; }
+
+  /* 성장률 기준 안내 */
+  .growth-guide { margin-top: 8px; font-size: 13px; color: var(--ink-soft); }
+  .growth-guide summary { cursor: pointer; font-weight: 700; color: var(--brown); padding: 6px 0; }
+  .growth-guide table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .growth-guide th, .growth-guide td { border-bottom: 1px solid var(--border); padding: 7px 8px; text-align: left; }
+  .growth-guide th { color: var(--ink-mute); font-weight: 700; }
+  .growth-guide td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .growth-guide p { margin-top: 8px; font-size: 12px; color: var(--ink-mute); line-height: 1.7; }
+  @media (max-width: 768px) {
+    .combo-list { width: 100%; }
+  }
+
   /* 결과 영역 숨김 (초기) */
   .results-section { display: none; }
   .results-section.active { display: block; }
@@ -974,6 +1041,7 @@
           최대 5개 종목 · 비중 합계: <span class="weight-total" id="weight-total">100%</span>
           <span class="weight-warn" id="weight-warn" style="display:none;">(100%로 맞춰주세요)</span>
         </div>
+        <div class="data-status" id="data-status"></div>
       </div>
       <button class="btn" id="add-holding-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -981,6 +1049,15 @@
       </button>
     </div>
     <div id="holdings-container"></div>
+    <details class="growth-guide">
+      <summary>배당률·성장률은 어떻게 채워지나요?</summary>
+      <p><b>배당률</b>은 실제 데이터입니다. 최근 12개월 동안 실제로 지급된 배당·분배금 합계를 현재가로 나눈 값이며, 매일 갱신됩니다. 상장 1년이 안 됐거나 분배금이 최근 크게 바뀐 종목은 ‘최근 분배 연환산’ 값으로 바꿔 볼 수 있습니다.</p>
+      <p><b>배당성장률·주가성장률</b>은 미래 예측이라 실데이터가 아닌 <b>가정치</b>입니다. 추천 종목은 프리셋 값을, 나머지는 아래 유형별 기본값을 넣습니다. 본인 판단에 맞게 직접 고쳐서 돌려보세요.</p>
+      <table>
+        <thead><tr><th>유형</th><th style="text-align:right">배당성장</th><th style="text-align:right">주가성장</th></tr></thead>
+        <tbody id="growth-guide-body"></tbody>
+      </table>
+    </details>
   </div>
 
   <!-- 결과 섹션 -->
@@ -1195,7 +1272,7 @@
   </div>
 
   <footer>
-    ※ 본 시뮬레이터는 세금·수수료를 제외한 단순 계산 도구입니다. 실제 투자 결과와는 차이가 있을 수 있습니다.
+    ※ 본 시뮬레이터는 세금·수수료를 제외한 단순 계산 도구입니다. 실제 투자 결과와는 차이가 있을 수 있습니다.<br>※ 배당률은 최근 12개월 실지급액 기준 실데이터(매일 갱신), 배당·주가 성장률은 가정치입니다. 과거 배당이 미래 배당을 보장하지 않습니다.
   </footer>
 
 </div>
@@ -1270,12 +1347,203 @@ const PRESETS = {
 
 const CHART_COLORS = ['#D9542B', '#E89A6F', '#8B6F47', '#C4A57B', '#5A6B5A'];
 
+// ============================================================
+// 전체 종목 데이터 (portfolio-sheet-data · 매일 자동 갱신)
+// ============================================================
+const DATA_BASE = 'https://ttokjaetv.github.io/portfolio-sheet-data/data/';
+
+// 추천 프리셋 → 실제 종목코드/티커 (배당률은 실데이터로 자동 갱신, 성장률은 프리셋 값 유지)
+const PRESET_CODE = {
+  'PLUS고배당주': 'KR:161510', 'TIGER은행고배당플러스TOP10': 'KR:466940', 'TIMEFOLIO코리아플러스배당': 'KR:441800',
+  'TIGER코리아배당다우존스': 'KR:0052D0', 'KODEX은행': 'KR:091170', 'SOL금융지주플러스고배당': 'KR:484880',
+  'KODEX주주환원고배당주': 'KR:0153K0', 'KODEX금융고배당TOP10': 'KR:0089D0', 'KODEX200타겟위클리': 'KR:498400',
+  '삼성전자': 'KR:005930', 'SK하이닉스': 'KR:000660', 'KT&G': 'KR:033780', 'KB금융': 'KR:105560', '신한지주': 'KR:055550',
+  '하나금융지주': 'KR:086790', '우리금융지주': 'KR:316140', '기업은행': 'KR:024110', '현대차': 'KR:005380', '기아': 'KR:000270',
+  'SK텔레콤': 'KR:017670', 'KT': 'KR:030200', 'POSCO홀딩스': 'KR:005490',
+  'TIGER미국배당다우존스': 'KR:458730', 'ACE미국배당퀄리티': 'KR:0046Y0', 'KODEX미국배당커버드콜액티브': 'KR:441640',
+  'TIGER미국배당다우존스타겟2호': 'KR:458760', 'KODEX미국나스닥100CC': 'KR:494300', 'RISE미국테크100CC': 'KR:491620',
+  'SOL미국30년국채CC': 'KR:473330', 'TIGER미국나스닥100CC': 'KR:441680', 'SOL팔란티어CC혼합': 'KR:0040Y0',
+};
+['SCHD','JEPI','JEPQ','VYM','VOO','QQQ','O','KO','PEP','JNJ','PG','MCD','MO','XOM','CVX','T','VZ','AAPL','MSFT']
+  .forEach(t => { PRESET_CODE[t] = 'US:' + t; });
+const CODE_TO_PRESET = {};
+Object.entries(PRESET_CODE).forEach(([p, k]) => { CODE_TO_PRESET[k] = p; });
+
+const UNIVERSE = new Map();     // 'KR:161510' | 'US:SCHD' → 종목 정보
+let UNIVERSE_LIST = [];
+const DATA_STATE = { kr: 'loading', us: 'loading', krUpdated: '', usUpdated: '' };
+
+// 따옴표 포함 CSV 파서
+function parseCSV(text) {
+  const rows = []; let row = [], field = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c !== '\r') field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  const head = (rows.shift() || []).map(h => h.replace(/^﻿/, '').trim());
+  return rows.filter(r => r.length > 1).map(r => {
+    const o = {}; head.forEach((h, i) => { o[h] = (r[i] ?? '').trim(); }); return o;
+  });
+}
+async function fetchCSV(name) {
+  const res = await fetch(DATA_BASE + name, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(name + ' ' + res.status);
+  return parseCSV(await res.text());
+}
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : null; };
+const normText = s => String(s || '').toLowerCase().replace(/[\s·\-_().&,+]/g, '');
+const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const FREQ_LABEL = { '월': '월배당', '분기': '분기배당', '반기': '반기배당', '연': '연배당', '격월': '격월배당', '불규칙': '불규칙 배당' };
+
+function addItem(it) {
+  it.norm = normText(it.name);
+  it.codeNorm = it.code.toLowerCase();
+  it.preset = CODE_TO_PRESET[it.key] || null;
+  it.type = classify(it);
+  UNIVERSE.set(it.key, it);
+}
+
+async function loadKR() {
+  const [etfs, stocks, divs] = await Promise.all([fetchCSV('etf_prices.csv'), fetchCSV('kr_stocks.csv'), fetchCSV('dividends.csv')]);
+  const dmap = new Map(divs.map(d => [d['종목코드'], d]));
+  const mk = (code, name, kind, price, extra) => {
+    const d = dmap.get(code);
+    let ttm = null, fwd = null;
+    if (d) {
+      const paid = num(d['연배당_실지급']), ann = num(d['연배당_연환산']);
+      ttm = num(d['배당수익률']);
+      if (ttm == null && paid != null && price) ttm = paid / price * 100;
+      if (ann != null && price) fwd = ann / price * 100;
+    }
+    addItem(Object.assign({
+      key: 'KR:' + code, code, name, market: 'KR', kind, price, currency: '원',
+      yieldTTM: ttm ?? 0, yieldFwd: fwd, hasDiv: !!d && (ttm ?? 0) > 0,
+      freq: d ? d['지급주기'] : '', updated: (d && d['갱신시각']) || '',
+    }, extra));
+  };
+  etfs.forEach(r => mk(r['종목코드'], r['종목명'], '국내ETF', num(r['현재가']), { asset: r['자산군'], fee: num(r['총보수']) }));
+  stocks.forEach(r => mk(r['종목코드'], r['종목명'], '국내주식', num(r['현재가']), { sector: r['업종'], board: r['시장'] }));
+  DATA_STATE.krUpdated = (etfs[0] && etfs[0]['갱신시각']) || '';
+}
+
+async function loadUS() {
+  const [prices, divs] = await Promise.all([fetchCSV('us_prices.csv'), fetchCSV('us_dividends.csv')]);
+  const dmap = new Map(divs.map(d => [d['티커'], d]));
+  prices.forEach(r => {
+    const t = r['티커']; const d = dmap.get(t); const price = num(r['현재가USD']);
+    let ttm = 0;
+    if (d) { ttm = num(d['배당수익률']); if (ttm == null) { const a = num(d['연배당USD']); ttm = (a && price) ? a / price * 100 : 0; } }
+    addItem({
+      key: 'US:' + t, code: t, name: r['종목명'], market: 'US', kind: r['구분'] === 'ETF' ? '미국ETF' : '미국주식',
+      price, currency: '달러', yieldTTM: ttm, yieldFwd: null, hasDiv: !!d && ttm > 0,
+      freq: d ? d['지급주기'] : '', updated: (d && d['갱신시각']) || '',
+    });
+  });
+  DATA_STATE.usUpdated = (prices[0] && prices[0]['갱신시각']) || '';
+}
+
+// ============================================================
+// 유형 분류 → 성장률 기본값 (실데이터 아님 · 가정치)
+// ============================================================
+const TYPE_DEFAULTS = {
+  levInv:    { label: '레버리지·인버스',        dg: 0,   pg: 0,   warn: '레버리지·인버스 상품은 장기 보유 시 지수와 수익률이 크게 벌어져 이 시뮬레이션에 맞지 않습니다' },
+  cc:        { label: '커버드콜',               dg: 0.5, pg: 2.0 },
+  rate:      { label: '금리·초단기채(이자 누적형)', dg: 0, pg: 2.5 },
+  bond:      { label: '채권',                   dg: 0,   pg: 0 },
+  reit:      { label: '리츠·부동산',            dg: 2.0, pg: 2.0 },
+  mixed:     { label: '채권혼합',               dg: 2.0, pg: 3.0 },
+  commod:    { label: '원자재·가상자산',        dg: 0,   pg: 4.0 },
+  currency:  { label: '통화',                   dg: 0,   pg: 1.0 },
+  etc:       { label: '기타',                   dg: 0,   pg: 3.0 },
+  krDivEtf:  { label: '배당주 ETF(국내상장)',   dg: 6.0, pg: 6.0 },
+  overseasEtf:{ label: '해외주식 ETF(국내상장)', dg: 6.0, pg: 8.0 },
+  krEqEtf:   { label: '국내주식 ETF',           dg: 5.0, pg: 6.0 },
+  krStock:   { label: '국내 개별주',            dg: 4.0, pg: 5.0 },
+  spac:      { label: '스팩',                   dg: 0,   pg: 0 },
+  usDivEtf:  { label: '미국 배당 ETF',          dg: 6.0, pg: 7.0 },
+  usEtf:     { label: '미국 주식 ETF',          dg: 6.0, pg: 8.0 },
+  usStock:   { label: '미국 개별주',            dg: 5.0, pg: 7.0 },
+  custom:    { label: '직접 입력',              dg: 5.0, pg: 7.0 },
+};
+const RATE_RE = /금리|KOFR|SOFR|CD|머니마켓|단기자금/;
+function classify(it) {
+  const n = it.name;
+  if (it.kind === '국내ETF') {
+    if (/레버리지|인버스|2X|곱버스/i.test(n)) return 'levInv';
+    if (/커버드콜|프리미엄|옵션|버퍼/.test(n)) return 'cc';
+    if (it.asset === '채권') return it.yieldTTM < 1 ? 'rate' : 'bond';
+    if (it.asset === '부동산') return 'reit';
+    if (it.asset === '혼합자산') return 'mixed';
+    if (it.asset === '원자재') return 'commod';
+    if (it.asset === '통화') return RATE_RE.test(n) ? 'rate' : 'currency';
+    if (it.asset === '기타') return RATE_RE.test(n) ? 'rate' : 'etc';
+    if (/배당/.test(n)) return 'krDivEtf';
+    if (/미국|나스닥|S&P|글로벌|선진|일본|중국|차이나|인도|베트남|유럽|신흥|MSCI|필라델피아|월드/i.test(n)) return 'overseasEtf';
+    return 'krEqEtf';
+  }
+  if (it.kind === '국내주식') {
+    if (/스팩/.test(n)) return 'spac';
+    if (/리츠|인프라/.test(n)) return 'reit';
+    return 'krStock';
+  }
+  if (it.kind === '미국ETF') {
+    if (/\b(2x|3x|ultra|leveraged|inverse|bear|short)\b/i.test(n)) return 'levInv';
+    if (/covered call|option|premium income|buywrite|yieldmax|buffer/i.test(n)) return 'cc';
+    if (/t-bill|treasury bill|money market|ultra.?short|0-3 month|floating rate/i.test(n)) return 'rate';
+    if (/bond|treasury|muni|clo\b|fixed income|aggregate|corporate|high yield|mortgage|tips|income securities/i.test(n)) return 'bond';
+    if (/reit|real estate/i.test(n)) return 'reit';
+    if (/gold|silver|oil|commodit|bitcoin|ether|crypto|copper|uranium/i.test(n)) return 'commod';
+    if (/dividend/i.test(n)) return 'usDivEtf';
+    return 'usEtf';
+  }
+  return 'usStock';
+}
+
+// ============================================================
 // 상태
+// ============================================================
+// key: 'KR:코드' | 'US:티커' | 'CUSTOM'
+// yieldSrc: 'ttm'(최근12개월 실지급) | 'fwd'(최근 분배 연환산) | 'preset' | 'manual' | 'none'
+// growthSrc: 'preset' | 'type' | 'manual'
 let holdings = [
-  { id: 1, preset: 'PLUS고배당주',         customName: '', weight: 40, dividendYield: 5.8,  dividendGrowth: 10.5, priceGrowth: 7.0 },
-  { id: 2, preset: 'TIGER미국배당다우존스', customName: '', weight: 30, dividendYield: 3.2,  dividendGrowth: 9.0,  priceGrowth: 8.0 },
-  { id: 3, preset: 'KODEX200타겟위클리',   customName: '', weight: 30, dividendYield: 12.0, dividendGrowth: 0.5,  priceGrowth: 3.0 },
+  { id: 1, key: 'KR:161510', customName: '', weight: 40 },
+  { id: 2, key: 'KR:458730', customName: '', weight: 30 },
+  { id: 3, key: 'KR:498400', customName: '', weight: 30 },
 ];
+let searchMarket = 'ALL'; // ALL | KR | US
+let pendingFocusId = null;
+
+// 종목 선택 시 배당률·성장률 채우기
+function applySelection(h, key, opts = {}) {
+  h.key = key;
+  const it = UNIVERSE.get(key);
+  const presetKey = CODE_TO_PRESET[key];
+  const p = presetKey ? PRESETS[presetKey] : null;
+  if (key === 'CUSTOM') {
+    if (!opts.keepValues) { const d = TYPE_DEFAULTS.custom; h.dividendYield = 4.0; h.dividendGrowth = d.dg; h.priceGrowth = d.pg; }
+    h.yieldSrc = 'manual'; h.growthSrc = 'manual';
+    return;
+  }
+  h.customName = '';
+  // 배당률
+  if (it) {
+    h.dividendYield = Math.round((it.yieldTTM || 0) * 100) / 100;
+    h.yieldSrc = it.hasDiv ? 'ttm' : 'none';
+  } else if (p) {
+    h.dividendYield = p.dividendYield; h.yieldSrc = 'preset';
+  }
+  // 성장률
+  if (p) { h.dividendGrowth = p.dividendGrowth; h.priceGrowth = p.priceGrowth; h.growthSrc = 'preset'; }
+  else if (it) { const d = TYPE_DEFAULTS[it.type]; h.dividendGrowth = d.dg; h.priceGrowth = d.pg; h.growthSrc = 'type'; }
+}
+holdings.forEach(h => applySelection(h, h.key));
 
 // Chart.js 인스턴스 보관
 let chartArea = null, chartBar = null, chartLine = null;
@@ -1300,12 +1568,160 @@ function formatKRWTable(n) {
   return Math.round(n).toLocaleString();
 }
 
-// 종목명 가져오기 (커스텀이면 customName 우선)
+// 종목명 가져오기 (차트·표 범례용)
 function getHoldingDisplayName(h) {
-  if (h.preset === '커스텀') {
-    return (h.customName && h.customName.trim()) ? h.customName.trim() : '커스텀';
+  if (h.key === 'CUSTOM') {
+    return (h.customName && h.customName.trim()) ? h.customName.trim() : '직접 입력';
   }
-  return PRESETS[h.preset]?.name || '커스텀';
+  const presetKey = CODE_TO_PRESET[h.key];
+  if (presetKey) return PRESETS[presetKey].name;
+  const it = UNIVERSE.get(h.key);
+  if (!it) return h.key.split(':')[1] || '종목';
+  if (it.market === 'US') {
+    const label = it.code + ' (' + it.name + ')';
+    return label.length > 26 ? it.code + ' (' + it.name.slice(0, 18) + '…)' : label;
+  }
+  return it.name;
+}
+
+// ============================================================
+// 종목 검색
+// ============================================================
+function searchUniverse(q) {
+  const nq = normText(q);
+  if (!nq) return [];
+  const tokens = q.toLowerCase().split(/\s+/).map(normText).filter(Boolean);
+  // 데이터를 못 불러온 경우: 추천 프리셋 안에서만 검색
+  if (!UNIVERSE_LIST.length) {
+    return Object.entries(PRESET_CODE)
+      .filter(([k, key]) => (searchMarket === 'ALL' || key.startsWith(searchMarket + ':')) &&
+        (normText(PRESETS[k].name).includes(nq) || key.toLowerCase().includes(nq)))
+      .map(([, key]) => ({ key }));
+  }
+  const res = [];
+  for (const it of UNIVERSE_LIST) {
+    if (searchMarket !== 'ALL' && it.market !== searchMarket) continue;
+    let s;
+    if (it.codeNorm === nq) s = 1000;
+    else if (it.norm === nq) s = 900;
+    else if (it.codeNorm.startsWith(nq)) s = 500;
+    else if (it.norm.startsWith(nq)) s = 450;
+    else if (it.norm.includes(nq)) s = 300;
+    else if (tokens.length > 1 && tokens.every(t => it.norm.includes(t) || it.codeNorm.includes(t))) s = 200;
+    else continue;
+    if (it.preset) s += 80;
+    if (it.hasDiv) s += 30;
+    if (it.market === 'KR') s += 10;
+    s -= it.name.length * 0.3;
+    res.push([s, it]);
+  }
+  res.sort((a, b) => b[0] - a[0]);
+  return res.slice(0, 50).map(x => x[1]);
+}
+
+function fmtYield(v) { return (Math.round((v || 0) * 100) / 100).toFixed(2) + '%'; }
+function kindBadge(kind) {
+  const cls = kind.startsWith('국내') ? 'kr' : 'us';
+  return `<span class="kbadge ${cls}">${kind}</span>`;
+}
+function optionHtml(key, idx) {
+  const it = UNIVERSE.get(key);
+  const presetKey = CODE_TO_PRESET[key];
+  const p = presetKey ? PRESETS[presetKey] : null;
+  const name = it ? it.name : (p ? p.name : key);
+  const code = it ? it.code : key.split(':')[1];
+  const kind = it ? it.kind : (key.startsWith('US:') ? '미국' : '국내');
+  const y = it ? (it.hasDiv ? '배당률 ' + fmtYield(it.yieldTTM) : '배당 없음') : (p ? '배당률 ' + p.dividendYield + '%' : '');
+  const fq = it && it.freq ? (FREQ_LABEL[it.freq] || it.freq) : '';
+  return `<div class="combo-opt" data-key="${escapeHtml(key)}" data-idx="${idx}">
+      <div class="opt-name">${escapeHtml(name)}${p ? '<span class="opt-star">추천</span>' : ''}</div>
+      <div class="opt-sub">${kindBadge(kind)}<span>${escapeHtml(code)}</span>${y ? `<span>${y}</span>` : ''}${fq ? `<span>${fq}</span>` : ''}</div>
+    </div>`;
+}
+
+function renderComboList(listEl, query) {
+  const q = query.trim();
+  const tabs = [['ALL', '전체'], ['KR', '국내상장'], ['US', '미국상장']]
+    .map(([v, t]) => `<button type="button" class="mkt-tab ${searchMarket === v ? 'on' : ''}" data-mkt="${v}">${t}</button>`).join('');
+  let html = `<div class="combo-tabs">${tabs}</div>`;
+  let idx = 0;
+  if (!q) {
+    const grouped = {};
+    Object.entries(PRESETS).forEach(([k, p]) => {
+      if (k === '커스텀') return;
+      const key = PRESET_CODE[k];
+      if (!key) return;
+      if (searchMarket !== 'ALL' && !key.startsWith(searchMarket + ':')) return;
+      (grouped[p.group] = grouped[p.group] || []).push(key);
+    });
+    html += `<div class="combo-hint">종목명이나 코드를 입력하면 <b>국내·미국 전체 종목</b>에서 찾습니다</div>`;
+    Object.entries(grouped).forEach(([g, keys]) => {
+      html += `<div class="combo-group">추천 · ${escapeHtml(g.replace(/^\S+\s/, ''))}</div>`;
+      keys.forEach(k => { html += optionHtml(k, idx++); });
+    });
+    html += `<div class="combo-opt custom" data-key="CUSTOM" data-idx="${idx++}"><div class="opt-name">⚙️ 직접 입력</div><div class="opt-sub"><span>배당률·성장률을 직접 넣는 종목</span></div></div>`;
+  } else {
+    const loading = DATA_STATE.kr === 'loading' || DATA_STATE.us === 'loading';
+    const results = searchUniverse(q);
+    if (results.length) results.forEach(it => { html += optionHtml(it.key, idx++); });
+    else if (!loading) html += `<div class="combo-empty">‘${escapeHtml(q)}’ 검색 결과가 없습니다</div>`;
+    if (loading) html += `<div class="combo-empty">종목 데이터를 불러오는 중입니다…</div>`;
+    if (DATA_STATE.kr === 'error' || DATA_STATE.us === 'error') html += `<div class="combo-empty">일부 종목 데이터를 불러오지 못했습니다. 새로고침해 주세요</div>`;
+    html += `<div class="combo-opt custom" data-key="CUSTOM" data-name="${escapeHtml(q)}" data-idx="${idx++}"><div class="opt-name">⚙️ ‘${escapeHtml(q)}’ 직접 입력으로 추가</div><div class="opt-sub"><span>배당률·성장률을 직접 넣습니다</span></div></div>`;
+  }
+  listEl.innerHTML = html;
+  listEl.dataset.active = '-1';
+}
+
+// ============================================================
+// 종목 하단 정보줄 (데이터 출처·기준 표시)
+// ============================================================
+function metaHtml(h) {
+  if (h.key === 'CUSTOM') {
+    return `<div class="meta-line">직접 입력 종목 · 배당률·성장률을 직접 넣어주세요</div>`;
+  }
+  const it = UNIVERSE.get(h.key);
+  const presetKey = CODE_TO_PRESET[h.key];
+  if (!it) {
+    const st = h.key.startsWith('US:') ? DATA_STATE.us : DATA_STATE.kr;
+    return `<div class="meta-line">${st === 'loading' ? '실제 배당 데이터를 불러오는 중… (지금은 추천 프리셋 값)' : '실데이터를 찾지 못해 추천 프리셋 값을 사용 중입니다'}</div>`;
+  }
+  const parts = [kindBadge(it.kind), `<span>${escapeHtml(it.code)}</span>`];
+  if (it.freq) parts.push(`<span>${FREQ_LABEL[it.freq] || escapeHtml(it.freq)}</span>`);
+  if (it.price) parts.push(`<span>현재가 ${it.market === 'US' ? '$' + it.price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : it.price.toLocaleString() + '원'}</span>`);
+  if (it.fee != null) parts.push(`<span>총보수 ${it.fee}%</span>`);
+  let html = `<div class="meta-line">${parts.join('')}</div>`;
+
+  const dateTxt = it.updated ? ` · ${it.updated.slice(0, 10)} 기준` : '';
+  let yl = '';
+  if (h.yieldSrc === 'ttm') {
+    yl = `<span>배당률 = <b>최근 12개월 실제 지급액 ÷ 현재가</b>${dateTxt}</span>`;
+    if (it.yieldFwd && it.yieldTTM > 0 && Math.abs(it.yieldFwd - it.yieldTTM) / it.yieldTTM > 0.1) {
+      yl += ` <button type="button" class="meta-btn" data-act="fwd" data-id="${h.id}">최근 분배 연환산 ${fmtYield(it.yieldFwd)} 적용</button>`;
+    }
+  } else if (h.yieldSrc === 'fwd') {
+    yl = `<span>배당률 = <b>최근 1회 분배금 × 연 지급횟수 ÷ 현재가</b>${dateTxt}</span> <button type="button" class="meta-btn" data-act="ttm" data-id="${h.id}">12개월 실지급 기준(${fmtYield(it.yieldTTM)})으로</button>`;
+  } else if (h.yieldSrc === 'none') {
+    yl = `최근 12개월 배당 기록이 없어 배당률 0%로 넣었습니다`;
+  } else if (h.yieldSrc === 'manual') {
+    yl = `배당률 직접 입력값 <button type="button" class="meta-btn" data-act="ttm" data-id="${h.id}">실데이터(${fmtYield(it.yieldTTM)})로 되돌리기</button>`;
+  } else {
+    yl = `배당률 = 추천 프리셋 값`;
+  }
+  html += `<div class="meta-line">${yl}</div>`;
+
+  const td = TYPE_DEFAULTS[it.type];
+  let gl = '';
+  if (h.growthSrc === 'preset') gl = `성장률 = 추천 프리셋 값 (가정치)`;
+  else if (h.growthSrc === 'type') gl = `<span>성장률 = <b>‘${td.label}’ 유형 기본값</b> (가정치 · 직접 수정 가능)</span>`;
+  else gl = `성장률 직접 입력값 <button type="button" class="meta-btn" data-act="growth" data-id="${h.id}">${presetKey ? '프리셋 값' : '유형 기본값'}으로 되돌리기</button>`;
+  html += `<div class="meta-line">${gl}</div>`;
+  if (td.warn) html += `<div class="meta-line warn">⚠️ ${td.warn}</div>`;
+  return html;
+}
+function refreshMeta(h) {
+  const el = document.getElementById('meta-' + h.id);
+  if (el) el.innerHTML = metaHtml(h);
 }
 
 // ============================================================
@@ -1317,38 +1733,26 @@ function renderHoldings() {
   holdings.forEach((h) => {
     const row = document.createElement('div');
     row.className = 'holding-row';
-
-    // 그룹별로 묶어서 optgroup 생성
-    const grouped = {};
-    Object.entries(PRESETS).forEach(([key, p]) => {
-      const groupName = p.group || '기타';
-      if (!grouped[groupName]) grouped[groupName] = [];
-      grouped[groupName].push({ key, p });
-    });
-
-    let presetOptions = '';
-    Object.entries(grouped).forEach(([groupName, items]) => {
-      presetOptions += `<optgroup label="${groupName}">`;
-      items.forEach(({ key, p }) => {
-        const sel = h.preset === key ? 'selected' : '';
-        presetOptions += `<option value="${key}" ${sel}>${p.name}</option>`;
-      });
-      presetOptions += `</optgroup>`;
-    });
-
-    const isCustom = h.preset === '커스텀';
+    const isCustom = h.key === 'CUSTOM';
+    const shown = isCustom ? '⚙️ 직접 입력' : getHoldingDisplayName(h);
 
     row.innerHTML = `
       <div class="holding-grid">
         <div>
-          <label class="label">종목 / 프리셋</label>
-          <select data-id="${h.id}" data-field="preset">${presetOptions}</select>
+          <label class="label">종목 검색</label>
+          <div class="combo">
+            <input type="text" class="combo-input" data-id="${h.id}" data-role="search"
+              value="${escapeHtml(shown)}" data-shown="${escapeHtml(shown)}"
+              placeholder="종목명·코드 (예: SCHD, 고배당)" autocomplete="off" spellcheck="false">
+            <svg class="combo-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <div class="combo-list" hidden></div>
+          </div>
           ${isCustom ? `
-            <input type="text" 
-              data-id="${h.id}" 
-              data-field="customName" 
-              value="${h.customName || ''}" 
-              placeholder="종목명 입력 (예: 삼성전자)" 
+            <input type="text"
+              data-id="${h.id}"
+              data-field="customName"
+              value="${escapeHtml(h.customName || '')}"
+              placeholder="종목명 입력 (예: 내 배당주)"
               style="margin-top: 8px; font-size: 14px;"
               maxlength="20">
           ` : ''}
@@ -1359,38 +1763,37 @@ function renderHoldings() {
         </div>
         <div>
           <label class="label" title="현재 시가배당률. 주가 대비 연간 배당금 비율입니다.">배당률 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="dividendYield" value="${h.dividendYield}" step="0.1" title="현재 시가배당률. 주가 대비 연간 배당금 비율입니다. (예: SCHD 3.5%)">
+          <input type="number" data-id="${h.id}" data-field="dividendYield" value="${h.dividendYield}" step="0.1" title="현재 시가배당률. 종목을 고르면 최근 12개월 실제 지급액 기준으로 자동 입력됩니다.">
         </div>
         <div>
           <label class="label" title="배당금이 매년 얼마나 늘어나는지의 비율">배당성장 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="dividendGrowth" value="${h.dividendGrowth}" step="0.5" title="배당금이 매년 얼마나 늘어나는지. SCHD는 약 11%, JEPI는 약 2%, 커버드콜 ETF는 0~1%가 일반적입니다.">
+          <input type="number" data-id="${h.id}" data-field="dividendGrowth" value="${h.dividendGrowth}" step="0.5" title="배당금이 매년 얼마나 늘어나는지(가정치). 커버드콜 ETF는 0~1%가 일반적입니다.">
         </div>
         <div>
           <label class="label" title="주가가 매년 얼마나 오를지 예상치">주가성장 (%)</label>
-          <input type="number" data-id="${h.id}" data-field="priceGrowth" value="${h.priceGrowth}" step="0.5" title="주가가 매년 얼마나 오를지의 연평균 예상치. 총 자산 계산의 핵심 지표입니다. (S&P500 장기 평균 약 10%)">
+          <input type="number" data-id="${h.id}" data-field="priceGrowth" value="${h.priceGrowth}" step="0.5" title="주가가 매년 얼마나 오를지의 연평균 예상치(가정치). 총 자산 계산의 핵심 지표입니다.">
         </div>
-        <button class="btn-icon" data-remove="${h.id}" ${holdings.length <= 1 ? 'disabled' : ''}>
+        <button class="btn-icon" data-remove="${h.id}" ${holdings.length <= 1 ? 'disabled' : ''} aria-label="종목 삭제">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
         </button>
       </div>
+      <div class="holding-meta" id="meta-${h.id}">${metaHtml(h)}</div>
     `;
     container.appendChild(row);
   });
 
-  // 비중 합계 업데이트
-  const total = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
-  document.getElementById('weight-total').textContent = total + '%';
-  document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
-  document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
-
-  // 추가 버튼 활성화
+  updateWeightTotal();
   document.getElementById('add-holding-btn').disabled = holdings.length >= 5;
 
-  // 이벤트 바인딩
-  container.querySelectorAll('select, input').forEach(el => {
+  // 숫자·이름 입력
+  container.querySelectorAll('input[data-field]').forEach(el => {
     el.addEventListener('input', handleHoldingChange);
-    el.addEventListener('change', handleHoldingChange);
   });
+  // 검색 콤보
+  container.querySelectorAll('.combo-input').forEach(bindCombo);
+  // 정보줄 버튼
+  container.querySelectorAll('.holding-meta').forEach(el => el.addEventListener('click', handleMetaAction));
+  // 삭제
   container.querySelectorAll('[data-remove]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const id = Number(e.currentTarget.dataset.remove);
@@ -1401,6 +1804,110 @@ function renderHoldings() {
       }
     });
   });
+
+  if (pendingFocusId != null) {
+    const el = container.querySelector(`.combo-input[data-id="${pendingFocusId}"]`);
+    pendingFocusId = null;
+    if (el) el.focus();
+  }
+}
+
+function updateWeightTotal() {
+  const total = holdings.reduce((s, x) => s + Number(x.weight || 0), 0);
+  document.getElementById('weight-total').textContent = total + '%';
+  document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
+  document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
+}
+
+function bindCombo(input) {
+  const list = input.parentElement.querySelector('.combo-list');
+  const id = Number(input.dataset.id);
+  let timer = null;
+  const open = (q) => { renderComboList(list, q); list.hidden = false; };
+  const close = () => { list.hidden = true; };
+
+  input.addEventListener('focus', () => {
+    input.value = '';
+    open('');
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      close();
+      if (document.activeElement !== input) input.value = input.dataset.shown;
+    }, 150);
+  });
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => open(input.value), 80);
+  });
+  input.addEventListener('keydown', (e) => {
+    const opts = [...list.querySelectorAll('.combo-opt')];
+    let a = Number(list.dataset.active || -1);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (list.hidden) open(input.value);
+      a = e.key === 'ArrowDown' ? Math.min(opts.length - 1, a + 1) : Math.max(0, a - 1);
+      opts.forEach((o, i) => o.classList.toggle('active', i === a));
+      if (opts[a]) opts[a].scrollIntoView({ block: 'nearest' });
+      list.dataset.active = String(a);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const pick = opts[a >= 0 ? a : 0];
+      if (pick && input.value.trim()) choose(pick);
+    } else if (e.key === 'Escape') {
+      input.blur();
+    }
+  });
+  // 목록 클릭 (blur 전에 처리)
+  list.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const tab = e.target.closest('.mkt-tab');
+    if (tab) { searchMarket = tab.dataset.mkt; open(input.value); return; }
+    const opt = e.target.closest('.combo-opt');
+    if (opt) choose(opt);
+  });
+  function choose(opt) {
+    const h = holdings.find(x => x.id === id);
+    if (!h) return;
+    const key = opt.dataset.key;
+    if (key === 'CUSTOM') {
+      const wasCustom = h.key === 'CUSTOM';
+      applySelection(h, 'CUSTOM', { keepValues: wasCustom });
+      if (opt.dataset.name) h.customName = opt.dataset.name.slice(0, 20);
+    } else {
+      applySelection(h, key);
+    }
+    input.blur();
+    close();
+    renderHoldings();
+    update();
+  }
+}
+
+// 입력 중에 데이터가 도착하면, 포커스가 빠진 뒤 다시 그린다
+let needsRerender = false;
+document.getElementById('holdings-container').addEventListener('focusout', () => {
+  setTimeout(() => {
+    if (needsRerender && !document.querySelector('#holdings-container :focus')) { needsRerender = false; renderHoldings(); }
+  }, 200);
+});
+
+function handleMetaAction(e) {
+  const btn = e.target.closest('.meta-btn');
+  if (!btn) return;
+  const h = holdings.find(x => x.id === Number(btn.dataset.id));
+  const it = h && UNIVERSE.get(h.key);
+  if (!h || !it) return;
+  const act = btn.dataset.act;
+  if (act === 'fwd') { h.dividendYield = Math.round(it.yieldFwd * 100) / 100; h.yieldSrc = 'fwd'; }
+  if (act === 'ttm') { h.dividendYield = Math.round(it.yieldTTM * 100) / 100; h.yieldSrc = it.hasDiv ? 'ttm' : 'none'; }
+  if (act === 'growth') {
+    const presetKey = CODE_TO_PRESET[h.key];
+    if (presetKey) { const p = PRESETS[presetKey]; h.dividendGrowth = p.dividendGrowth; h.priceGrowth = p.priceGrowth; h.growthSrc = 'preset'; }
+    else { const d = TYPE_DEFAULTS[it.type]; h.dividendGrowth = d.dg; h.priceGrowth = d.pg; h.growthSrc = 'type'; }
+  }
+  renderHoldings();
+  update();
 }
 
 function handleHoldingChange(e) {
@@ -1409,39 +1916,68 @@ function handleHoldingChange(e) {
   const value = e.target.value;
   const h = holdings.find(x => x.id === id);
   if (!h) return;
-  if (field === 'preset') {
-    const p = PRESETS[value];
-    h.preset = value;
-    h.dividendYield = p.dividendYield;
-    h.dividendGrowth = p.dividendGrowth;
-    h.priceGrowth = p.priceGrowth;
-    // 커스텀이 아니면 customName 비우기
-    if (value !== '커스텀') h.customName = '';
-    renderHoldings(); // 프리셋 바뀌면 입력값도 업데이트해야 하니 다시 렌더
-  } else if (field === 'customName') {
-    // 텍스트 입력은 그대로 저장 (재렌더 안 함, 포커스 유지)
-    h.customName = value;
+  if (field === 'customName') {
+    h.customName = value;   // 재렌더 안 함 (포커스 유지)
   } else {
     h[field] = Number(value);
-    if (field === 'weight') {
-      // 비중만 변경한 경우 재렌더 안 하고 합계만 업데이트
-      const total = holdings.reduce((s, x) => s + Number(x.weight || 0), 0);
-      document.getElementById('weight-total').textContent = total + '%';
-      document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
-      document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
-    }
+    if (field === 'weight') updateWeightTotal();
+    if (field === 'dividendYield' && h.key !== 'CUSTOM') { h.yieldSrc = 'manual'; refreshMeta(h); }
+    if ((field === 'dividendGrowth' || field === 'priceGrowth') && h.key !== 'CUSTOM') { h.growthSrc = 'manual'; refreshMeta(h); }
   }
   update();
 }
 
-// 종목 추가
+// 종목 추가 → 바로 검색창에 포커스
 document.getElementById('add-holding-btn').addEventListener('click', () => {
   if (holdings.length >= 5) return;
   const newId = Math.max(...holdings.map(h => h.id)) + 1;
-  holdings.push({ id: newId, preset: '커스텀', customName: '', weight: 0, dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 });
+  const h = { id: newId, key: 'CUSTOM', customName: '', weight: 0 };
+  applySelection(h, 'CUSTOM');
+  holdings.push(h);
+  pendingFocusId = newId;
   renderHoldings();
   update();
 });
+
+// ============================================================
+// 데이터 로드 (페이지는 즉시 동작, 데이터가 오면 실제 배당률로 교체)
+// ============================================================
+function renderDataStatus() {
+  const el = document.getElementById('data-status');
+  if (!el) return;
+  const krN = [...UNIVERSE.values()].filter(x => x.market === 'KR').length;
+  const usN = UNIVERSE.size - krN;
+  const seg = (st, label, n) => st === 'loading' ? `${label} 불러오는 중…` : st === 'error' ? `${label} 불러오기 실패` : `${label} ${n.toLocaleString()}개`;
+  const upd = DATA_STATE.krUpdated || DATA_STATE.usUpdated;
+  el.innerHTML = `<span class="ds-dot ${DATA_STATE.kr === 'ok' && DATA_STATE.us === 'ok' ? 'ok' : ''}"></span>검색 가능 종목: ${seg(DATA_STATE.kr, '국내상장', krN)} · ${seg(DATA_STATE.us, '미국상장', usN)}${upd ? ` <span class="ds-date">(${upd.slice(0, 10)} 갱신)</span>` : ''}`;
+}
+
+function onDataLoaded() {
+  UNIVERSE_LIST = [...UNIVERSE.values()];
+  holdings.forEach(h => {
+    if (h.yieldSrc === 'preset' && UNIVERSE.has(h.key)) {
+      const keepGrowth = h.growthSrc === 'manual' ? { dg: h.dividendGrowth, pg: h.priceGrowth } : null;
+      applySelection(h, h.key);
+      if (keepGrowth) { h.dividendGrowth = keepGrowth.dg; h.priceGrowth = keepGrowth.pg; h.growthSrc = 'manual'; }
+    }
+  });
+  renderDataStatus();
+  if (document.querySelector('#holdings-container :focus')) {
+    needsRerender = true;
+    const open = document.querySelector('#holdings-container .combo-list:not([hidden])');
+    const inp = open && open.parentElement.querySelector('.combo-input');
+    if (open && inp) renderComboList(open, inp.value);
+  } else {
+    renderHoldings();
+  }
+  update();
+}
+
+function loadAllData() {
+  renderDataStatus();
+  loadKR().then(() => { DATA_STATE.kr = 'ok'; }).catch(err => { console.warn(err); DATA_STATE.kr = 'error'; }).then(onDataLoaded);
+  loadUS().then(() => { DATA_STATE.us = 'ok'; }).catch(err => { console.warn(err); DATA_STATE.us = 'error'; }).then(onDataLoaded);
+}
 
 // ============================================================
 // 시뮬레이션
@@ -2525,8 +3061,12 @@ document.getElementById('inflation-toggle').addEventListener('change', (e) => {
 document.getElementById('inflation-rate').addEventListener('input', update);
 
 // 초기화
+document.getElementById('growth-guide-body').innerHTML = Object.values(TYPE_DEFAULTS)
+  .filter(d => d.label !== '직접 입력')
+  .map(d => `<tr><td>${d.label}</td><td class="n">${d.dg}%</td><td class="n">${d.pg}%</td></tr>`).join('');
 renderHoldings();
 update();
+loadAllData();
 </script>
 </body>
 </html>
