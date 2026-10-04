@@ -105,8 +105,8 @@
   }
 
   .label {
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 1px; color: var(--ink-mute);
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.3px; color: var(--ink-soft);
     text-transform: uppercase;
     margin-bottom: 6px; display: block;
   }
@@ -764,7 +764,7 @@
       padding: 9px 12px; 
       font-size: 14px; 
     }
-    .label { font-size: 10px; }
+    .label { font-size: 13px; }
 
     /* 물가 섹션 모바일 */
     .inflation-toggle-wrap {
@@ -933,6 +933,11 @@
   /* 결과 영역 숨김 (초기) */
   .results-section { display: none; }
   .results-section.active { display: block; }
+
+/* iOS Safari: 글자 16px 미만 입력칸은 누를 때 화면이 자동 확대됨 → 모바일에서 16px 보장 */
+@media (max-width: 768px) {
+  input[type=text], input[type=number], input[type=search], input[type=tel], input:not([type]), select, textarea { font-size: 16px !important; }
+}
 </style>
 </head>
 <body>
@@ -1216,11 +1221,14 @@
 
     <!-- Raw Data 테이블 (세후) -->
     <div class="card">
-      <div class="chart-title">연차별 Raw Data <span style="color: var(--brown); font-weight: 800;">(세후 · 배당소득세 15% 반영)</span></div>
+      <div class="chart-title">연차별 Raw Data <span style="color: var(--brown); font-weight: 800;">(세후 · 일반계좌 배당세 반영)</span></div>
       <div class="chart-subtitle">
-        배당받을 때마다 매년 15%를 세금으로 차감하고 남은 금액만 재투자한 결과입니다. 
+        일반계좌 기준으로 배당받을 때마다 <b>종목별 세율</b>을 떼고 남은 금액만 재투자한 결과입니다.<br>
+        · 미국 직투(주식·ETF): 미국 원천징수 <b>15%</b>로 종결 &nbsp;· 국내 개별주: <b>15.4%</b><br>
+        · 국내상장 ETF: 분배금 중 <b>과세표준액에만 15.4%</b> (최근 12개월 실제 과표 비율 적용 · 국내 커버드콜 옵션프리미엄 등 비과세분 제외 · 과표 자료가 없으면 전액 15.4%)<br>
         <strong style="color: var(--accent);">절세계좌(ISA·연금저축·IRP)</strong>를 활용하면 이 차이를 크게 줄일 수 있습니다.
       </div>
+      <div id="tax-note" style="display:none; margin: 10px 0 4px; padding: 12px 14px; border-radius: 10px; background: #FDF1EC; border: 1px solid #F0C4B0; color: #7A2E14; font-size: 14px; line-height: 1.6;"></div>
       <div class="table-wrap">
         <table class="data-table">
           <thead>
@@ -1272,7 +1280,7 @@
   </div>
 
   <footer>
-    ※ 본 시뮬레이터는 세금·수수료를 제외한 단순 계산 도구입니다. 실제 투자 결과와는 차이가 있을 수 있습니다.<br>※ 배당률은 최근 12개월 실지급액 기준 실데이터(매일 갱신), 배당·주가 성장률은 가정치입니다. 과거 배당이 미래 배당을 보장하지 않습니다.
+    ※ 세후 표는 일반계좌 기준 종목별 배당세(미국 직투 15% · 국내 15.4% · 국내상장 ETF는 과표분만)를 반영했습니다. 금융소득종합과세·건보료·매매차익 과세·수수료·환율 변동은 계산에 넣지 않았습니다. 실제 투자 결과와는 차이가 있을 수 있습니다.<br>※ 배당률은 최근 12개월 실지급액 기준 실데이터(매일 갱신), 배당·주가 성장률은 가정치입니다. 과거 배당이 미래 배당을 보장하지 않습니다.
   </footer>
 
 </div>
@@ -1428,9 +1436,54 @@ async function loadKR() {
       freq: d ? d['지급주기'] : '', updated: (d && d['갱신시각']) || '',
     }, extra));
   };
-  etfs.forEach(r => mk(r['종목코드'], r['종목명'], '국내ETF', num(r['현재가']), { asset: r['자산군'], fee: num(r['총보수']) }));
+  const taxRatio = await loadTaxBaseRatio();
+  etfs.forEach(r => mk(r['종목코드'], r['종목명'], '국내ETF', num(r['현재가']), {
+    asset: r['자산군'], fee: num(r['총보수']),
+    taxRatio: taxRatio.has(r['종목코드']) ? taxRatio.get(r['종목코드']) : null,
+  }));
   stocks.forEach(r => mk(r['종목코드'], r['종목명'], '국내주식', num(r['현재가']), { sector: r['업종'], board: r['시장'] }));
   DATA_STATE.krUpdated = (etfs[0] && etfs[0]['갱신시각']) || '';
+}
+
+// 국내상장 ETF 과세 비율 = 최근 12개월 과세표준액 합 ÷ 분배금 합
+// (국내 커버드콜 옵션프리미엄·국내주식 매매차익 등 비과세 재원은 과표에서 빠짐)
+// 데이터: etf_tax_base.json · funetf_tax_base.json  형식 code → [[배당락일, 분배금, 과세표준액], ...]
+async function loadTaxBaseRatio() {
+  const out = new Map();
+  const files = ['etf_tax_base.json', 'funetf_tax_base.json'];
+  const results = await Promise.allSettled(files.map(f => fetch(DATA_BASE + f, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null)));
+  results.forEach(res => {
+    const data = res.status === 'fulfilled' && res.value && res.value.data;
+    if (!data) return;
+    Object.entries(data).forEach(([code, rows]) => {
+      if (!Array.isArray(rows) || !rows.length) return;
+      const latest = rows.reduce((m, r) => (r[0] > m ? r[0] : m), '');
+      const lt = new Date(latest.replace(/\//g, '-'));
+      const from = new Date(lt.getTime() - 365 * 864e5);
+      let dist = 0, base = 0;
+      rows.forEach(([d, amt, tb]) => {
+        const dt = new Date(String(d).replace(/\//g, '-'));
+        if (dt > from && amt > 0 && tb != null) { dist += amt; base += Math.max(0, tb); }
+      });
+      if (dist > 0) out.set(code, Math.min(1, base / dist));
+    });
+  });
+  return out;
+}
+
+// 일반계좌 배당세율 (종목별)
+//  - 미국 직투: 미국 원천징수 15%로 종결 (국내 추가 없음)
+//  - 국내 개별주: 15.4%
+//  - 국내상장 ETF: 과세표준액에만 15.4% → 15.4% × 과세 비율 (과표 데이터 없으면 전액 15.4%)
+const TAX_KR = 0.154, TAX_US = 0.15;
+function holdingTax(h) {
+  if (h.key && h.key.startsWith('US:')) return { rate: TAX_US, taxable: 1, label: '미국 원천징수 15%' };
+  const it = UNIVERSE.get(h.key);
+  if (it && it.kind === '국내ETF') {
+    if (it.taxRatio != null) return { rate: TAX_KR * it.taxRatio, taxable: it.taxRatio, label: `과표 비율 ${Math.round(it.taxRatio * 100)}% × 15.4%` };
+    return { rate: TAX_KR, taxable: 1, label: '15.4% (과표 미확인 · 전액 과세로 가정)' };
+  }
+  return { rate: TAX_KR, taxable: 1, label: '배당소득세 15.4%' };
 }
 
 async function loadUS() {
@@ -1709,6 +1762,7 @@ function metaHtml(h) {
     yl = `배당률 = 추천 프리셋 값`;
   }
   html += `<div class="meta-line">${yl}</div>`;
+  html += `<div class="meta-line"><span>세후 계산 세율 = <b>${holdingTax(h).label}</b> (일반계좌)</span></div>`;
 
   const td = TYPE_DEFAULTS[it.type];
   let gl = '';
@@ -1989,7 +2043,7 @@ function simulate() {
   const totalWeight = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
   const inflationOn = document.getElementById('inflation-toggle').checked;
   const inflationRate = inflationOn ? (Number(document.getElementById('inflation-rate').value) || 0) / 100 : 0;
-  const TAX_RATE = 0.15; // 배당소득세 15% (간이)
+  // 세율은 종목별 holdingTax(h) — 미국 직투 15% / 국내 15.4% / 국내상장 ETF는 과표분에만 15.4%
 
   if (totalWeight === 0) return null;
 
@@ -2013,7 +2067,7 @@ function simulate() {
     weight: h.weight / totalWeight,
     yearlyDividend: 0,
   }));
-  // 재투자 O (세후) - 배당받을 때마다 15% 차감 후 재투자
+  // 재투자 O (세후) - 배당받을 때마다 종목별 세율로 차감 후 재투자 (일반계좌 기준)
   const stockStatesAfterTax = holdings.map(h => ({
     name: getHoldingDisplayName(h),
     principal: 0, value: 0,
@@ -2021,7 +2075,8 @@ function simulate() {
     growth: h.dividendGrowth / 100,
     priceGrowth: h.priceGrowth / 100,
     weight: h.weight / totalWeight,
-    yearlyDividend: 0, cumulativeDividend: 0, cumulativeTax: 0,
+    taxRate: holdingTax(h).rate, taxable: holdingTax(h).taxable,
+    yearlyDividend: 0, yearlyTaxableIncome: 0, cumulativeDividend: 0, cumulativeTax: 0,
   }));
   // 재투자 X (세후)
   const noReStatesAfterTax = holdings.map(h => ({
@@ -2031,6 +2086,7 @@ function simulate() {
     growth: h.dividendGrowth / 100,
     priceGrowth: h.priceGrowth / 100,
     weight: h.weight / totalWeight,
+    taxRate: holdingTax(h).rate,
     yearlyDividend: 0, cumulativeTax: 0,
   }));
 
@@ -2069,7 +2125,7 @@ function simulate() {
       s.cashDividends += div;
     });
 
-    // === 재투자 O (세후) - 배당의 15%를 매년 세금으로 차감 ===
+    // === 재투자 O (세후) - 종목별 세율로 매년 차감 ===
     stockStatesAfterTax.forEach(s => {
       const c = annualContribution * s.weight;
       s.principal += c; s.value += c;
@@ -2078,9 +2134,10 @@ function simulate() {
     stockStatesAfterTax.forEach(s => {
       const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
       const div = s.value * Math.max(eff, s.yieldRate * 0.3);
-      const tax = div * TAX_RATE;
+      const tax = div * s.taxRate;
       const divAfterTax = div - tax;
       s.yearlyDividend = divAfterTax;
+      s.yearlyTaxableIncome = div * s.taxable; // 금융소득(종합과세 판정용)
       s.cumulativeDividend += divAfterTax;
       s.cumulativeTax += tax;
       s.value += divAfterTax; // 세후 금액만 재투자
@@ -2095,7 +2152,7 @@ function simulate() {
     noReStatesAfterTax.forEach(s => {
       const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
       const div = s.value * Math.max(eff, s.yieldRate * 0.3);
-      const tax = div * TAX_RATE;
+      const tax = div * s.taxRate;
       const divAfterTax = div - tax;
       s.yearlyDividend = divAfterTax;
       s.cashDividends += divAfterTax;
@@ -2117,6 +2174,7 @@ function simulate() {
     const totalDivAT = stockStatesAfterTax.reduce((sum, s) => sum + s.yearlyDividend, 0);
     const totalCumDivAT = stockStatesAfterTax.reduce((sum, s) => sum + s.cumulativeDividend, 0);
     const totalCumTaxAT = stockStatesAfterTax.reduce((sum, s) => sum + s.cumulativeTax, 0);
+    const taxableIncomeAT = stockStatesAfterTax.reduce((sum, s) => sum + s.yearlyTaxableIncome, 0);
     const noReValueAT = noReStatesAfterTax.reduce((sum, s) => sum + s.value, 0);
     const noReCashAT = noReStatesAfterTax.reduce((sum, s) => sum + s.cashDividends, 0);
     const noReTotalAT = noReValueAT + noReCashAT;
@@ -2141,7 +2199,8 @@ function simulate() {
       noReinvestMonthlyDiv: Math.round(noReYearlyDiv / 12),
       noReinvestReturnRate: parseFloat(((noReTotal / totalPrincipal - 1) * 100).toFixed(1)),
       reinvestGap: Math.round(totalValue - noReTotal),
-      // 세후 (15% 차감)
+      // 세후 (종목별 세율 차감)
+      taxableIncomeAT: Math.round(taxableIncomeAT),
       totalValueAT: Math.round(totalValueAT),
       yearlyDividendAT: Math.round(totalDivAT),
       monthlyDividendAT: Math.round(totalDivAT / 12),
@@ -2947,7 +3006,17 @@ function renderResults(data) {
     tbody.appendChild(tr);
   });
 
-  // === 세후 테이블 렌더링 (15% 차감) ===
+  // 금융소득종합과세 안내 (재투자 O 세후 트랙의 과세 대상 배당 기준)
+  const taxNote = document.getElementById('tax-note');
+  if (taxNote) {
+    const over = data.yearlyData.find(r => r.taxableIncomeAT > 20000000);
+    taxNote.innerHTML = over
+      ? `⚠️ <b>${over.year}년차</b>부터 과세 대상 배당이 연 <b>${(over.taxableIncomeAT / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 })}만원</b>으로 2,000만원을 넘습니다. 넘는 부분은 다른 소득과 합산해 <b>금융소득종합과세</b>(6.6~49.5%)가 되고 건보료에도 영향이 있어, 실제 세금은 이 표보다 많아질 수 있습니다. 다른 이자·배당 소득도 합산되니 함께 확인하세요.`
+      : '';
+    taxNote.style.display = over ? 'block' : 'none';
+  }
+
+  // === 세후 테이블 렌더링 (종목별 세율 차감) ===
   const tbodyAT = document.getElementById('data-table-body-aftertax');
   tbodyAT.innerHTML = '';
   data.yearlyData.forEach(row => {
