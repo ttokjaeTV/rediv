@@ -1065,6 +1065,9 @@
     </details>
   </div>
 
+  <!-- 결과 없음 안내 (비중 0 · 투자금 0) -->
+  <div class="card" id="results-empty" style="display:none; font-size: 15px; line-height: 1.6; color: #7A2E14; background: #FDF1EC; border: 1px solid #F0C4B0;"></div>
+
   <!-- 결과 섹션 -->
   <div class="results-section active" id="results-section">
 
@@ -1157,7 +1160,7 @@
     <!-- 차트 2: 연간 배당금 막대 (명목) -->
     <div class="card">
       <div class="chart-title">연간 배당금 추이 (명목가치) · 재투자 O vs 재투자 X</div>
-      <div class="chart-subtitle">재투자한 경우 매년 받는 배당이 가파르게 늘어납니다 (단위: 만원)</div>
+      <div class="chart-subtitle">재투자한 경우 매년 받는 배당이 가파르게 늘어납니다 (단위: 원 · 만=만원, 억=억원)</div>
       <div class="chart-container lg">
         <canvas id="chart-bar"></canvas>
       </div>
@@ -1280,7 +1283,7 @@
   </div>
 
   <footer>
-    ※ 세후 표는 일반계좌 기준 종목별 배당세(미국 직투 15% · 국내 15.4% · 국내상장 ETF는 과표분만)를 반영했습니다. 금융소득종합과세·건보료·매매차익 과세·수수료·환율 변동은 계산에 넣지 않았습니다. 실제 투자 결과와는 차이가 있을 수 있습니다.<br>※ 배당률은 최근 12개월 실지급액 기준 실데이터(매일 갱신), 배당·주가 성장률은 가정치입니다. 과거 배당이 미래 배당을 보장하지 않습니다.
+    ※ 세후 표는 일반계좌 기준 종목별 배당세(미국 직투 15% · 국내 15.4% · 국내상장 ETF는 과표분만)를 반영했습니다. 금융소득종합과세·건보료·매매차익 과세·수수료·환율 변동은 계산에 넣지 않았습니다. 실제 투자 결과와는 차이가 있을 수 있습니다.<br>※ 배당률은 최근 12개월 실지급액 기준 실데이터(매일 갱신), 배당·주가 성장률은 가정치입니다. 과거 배당이 미래 배당을 보장하지 않습니다.<br>※ 계산 방식: 그 해 배당은 연초 보유액 × 배당률(1년차는 현재 배당률)이며 연말에 받아 재투자합니다. 초기 투자금은 1년차를 온전히 보유하고, 월 적립금은 연중 고르게 들어오므로 그 해에는 반년치(연 중간 시점 근사)만 배당·주가상승을 반영했습니다.
   </footer>
 
 </div>
@@ -1605,20 +1608,33 @@ let donutCharts = [];
 // ============================================================
 // 포맷팅
 // ============================================================
+// 부호는 따로 붙이고 단위(만·억)는 절댓값을 반올림한 뒤에 고른다 (99,995,000 → 1.00억)
 function formatKRW(n) {
-  if (n >= 100000000) return (n / 100000000).toFixed(2) + '억';
-  if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만';
-  return Math.round(n).toLocaleString();
+  n = Number(n);
+  if (!isFinite(n)) return '-';
+  const a = Math.abs(n);
+  const won = Math.round(a);
+  if (won === 0) return '0';
+  const sign = n < 0 ? '-' : '';
+  const man = Math.round(a / 10000);
+  if (man >= 10000) return sign + (a / 100000000).toFixed(2) + '억';
+  if (won >= 10000) return sign + man.toLocaleString() + '만';
+  return sign + won.toLocaleString();
+}
+// 차이 표시용: 0 이상은 '+', 음수는 '-' (반올림 결과가 0이면 '+0')
+function formatKRWSigned(n) {
+  n = Number(n);
+  if (!isFinite(n)) return '-';
+  return (Math.round(n) < 0 ? '-' : '+') + formatKRW(Math.abs(n));
 }
 function formatKRWFull(n) {
-  return Math.round(n).toLocaleString() + '원';
+  n = Number(n);
+  if (!isFinite(n)) return '-';
+  return (Math.round(n) || 0).toLocaleString() + '원';
 }
-// 테이블용 짧은 포맷 (만원 단위로 통일해서 줄바뀜 방지)
+// 테이블용 짧은 포맷 (만·억 단위로 줄바뀜 방지)
 function formatKRWTable(n) {
-  if (n >= 100000000) return (n / 100000000).toFixed(2) + '억';
-  if (n >= 10000) return Math.round(n / 10000).toLocaleString() + '만';
-  if (n >= 1000) return Math.round(n).toLocaleString();
-  return Math.round(n).toLocaleString();
+  return formatKRW(n);
 }
 
 // 종목명 가져오기 (차트·표 범례용)
@@ -1867,7 +1883,7 @@ function renderHoldings() {
 }
 
 function updateWeightTotal() {
-  const total = holdings.reduce((s, x) => s + Number(x.weight || 0), 0);
+  const total = Math.round(holdings.reduce((s, x) => s + Math.max(0, Number(x.weight) || 0), 0) * 100) / 100;
   document.getElementById('weight-total').textContent = total + '%';
   document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
   document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
@@ -1974,7 +1990,11 @@ function handleHoldingChange(e) {
     h.customName = value;   // 재렌더 안 함 (포커스 유지)
   } else {
     h[field] = Number(value);
-    if (field === 'weight') updateWeightTotal();
+    if (field === 'weight') {
+      if (!(h.weight > 0)) h.weight = 0;              // 음수·빈칸 비중은 0으로
+      if (Number(value) < 0) e.target.value = '0';
+      updateWeightTotal();
+    }
     if (field === 'dividendYield' && h.key !== 'CUSTOM') { h.yieldSrc = 'manual'; refreshMeta(h); }
     if ((field === 'dividendGrowth' || field === 'priceGrowth') && h.key !== 'CUSTOM') { h.growthSrc = 'manual'; refreshMeta(h); }
   }
@@ -2036,59 +2056,51 @@ function loadAllData() {
 // ============================================================
 // 시뮬레이션
 // ============================================================
+// 입력값 읽기 (기간은 1~50 정수, 물가·금액은 0 이상으로 보정)
+function readYears(writeBack) {
+  const el = document.getElementById('years');
+  const raw = String(el.value ?? '');
+  const n = Number(raw);
+  const y = Math.max(1, Math.min(50, Math.round(raw !== '' && isFinite(n) ? n : 1)));
+  if (writeBack && raw !== '' && n !== y) el.value = String(y);
+  return y;
+}
+function readNonNeg(id, writeBack) {
+  const el = document.getElementById(id);
+  const n = Number(el.value);
+  const v = isFinite(n) && n > 0 ? n : 0;
+  if (writeBack && el.value !== '' && isFinite(n) && n < 0) el.value = '0';
+  return v;
+}
+
 function simulate() {
-  const initial = Number(document.getElementById('initial').value) || 0;
-  const monthly = Number(document.getElementById('monthly').value) || 0;
-  const years = Math.max(1, Math.min(50, Number(document.getElementById('years').value) || 1));
-  const totalWeight = holdings.reduce((s, h) => s + Number(h.weight || 0), 0);
+  const initial = readNonNeg('initial');
+  const monthly = readNonNeg('monthly');
+  const years = readYears(false);
+  const weightOf = h => Math.max(0, Number(h.weight) || 0);
+  const totalWeight = holdings.reduce((s, h) => s + weightOf(h), 0);
   const inflationOn = document.getElementById('inflation-toggle').checked;
-  const inflationRate = inflationOn ? (Number(document.getElementById('inflation-rate').value) || 0) / 100 : 0;
+  const inflationRate = inflationOn ? readNonNeg('inflation-rate') / 100 : 0;
   // 세율은 종목별 holdingTax(h) — 미국 직투 15% / 국내 15.4% / 국내상장 ETF는 과표분에만 15.4%
 
-  if (totalWeight === 0) return null;
+  if (!(totalWeight > 0)) return null;          // 비중 합계 0 → 계산 불가
+  if (!(initial > 0 || monthly > 0)) return null; // 투자금 0 → 계산 불가
 
-  // 재투자 O (세전)
-  const stockStates = holdings.map(h => ({
-    name: getHoldingDisplayName(h),
-    principal: 0, value: 0,
-    yieldRate: h.dividendYield / 100,
-    growth: h.dividendGrowth / 100,
-    priceGrowth: h.priceGrowth / 100,
-    weight: h.weight / totalWeight,
-    yearlyDividend: 0, cumulativeDividend: 0,
-  }));
-  // 재투자 X (세전)
-  const noReStates = holdings.map(h => ({
+  // 4개 트랙 공통 상태: 재투자 O/X × 세전/세후
+  const mkState = (h) => ({
     name: getHoldingDisplayName(h),
     principal: 0, value: 0, cashDividends: 0,
-    yieldRate: h.dividendYield / 100,
-    growth: h.dividendGrowth / 100,
-    priceGrowth: h.priceGrowth / 100,
-    weight: h.weight / totalWeight,
-    yearlyDividend: 0,
-  }));
-  // 재투자 O (세후) - 배당받을 때마다 종목별 세율로 차감 후 재투자 (일반계좌 기준)
-  const stockStatesAfterTax = holdings.map(h => ({
-    name: getHoldingDisplayName(h),
-    principal: 0, value: 0,
-    yieldRate: h.dividendYield / 100,
-    growth: h.dividendGrowth / 100,
-    priceGrowth: h.priceGrowth / 100,
-    weight: h.weight / totalWeight,
+    yieldRate: (Number(h.dividendYield) || 0) / 100,
+    growth: (Number(h.dividendGrowth) || 0) / 100,
+    priceGrowth: (Number(h.priceGrowth) || 0) / 100,
+    weight: weightOf(h) / totalWeight,
     taxRate: holdingTax(h).rate, taxable: holdingTax(h).taxable,
-    yearlyDividend: 0, yearlyTaxableIncome: 0, cumulativeDividend: 0, cumulativeTax: 0,
-  }));
-  // 재투자 X (세후)
-  const noReStatesAfterTax = holdings.map(h => ({
-    name: getHoldingDisplayName(h),
-    principal: 0, value: 0, cashDividends: 0,
-    yieldRate: h.dividendYield / 100,
-    growth: h.dividendGrowth / 100,
-    priceGrowth: h.priceGrowth / 100,
-    weight: h.weight / totalWeight,
-    taxRate: holdingTax(h).rate,
-    yearlyDividend: 0, cumulativeTax: 0,
-  }));
+    yearlyDividend: 0, yearlyTax: 0, yearlyTaxableIncome: 0, cumulativeDividend: 0, cumulativeTax: 0,
+  });
+  const stockStates = holdings.map(mkState);          // 재투자 O (세전)
+  const noReStates = holdings.map(mkState);           // 재투자 X (세전)
+  const stockStatesAfterTax = holdings.map(mkState);  // 재투자 O (세후) - 배당 때마다 종목별 세율 차감 후 재투자
+  const noReStatesAfterTax = holdings.map(mkState);   // 재투자 X (세후)
 
   [stockStates, noReStates, stockStatesAfterTax, noReStatesAfterTax].forEach(arr => {
     arr.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
@@ -2096,93 +2108,74 @@ function simulate() {
 
   const yearlyData = [];
   const annualContribution = monthly * 12;
+  let realCumDiv = 0, realCumDivAT = 0, realCumTaxAT = 0; // 연도별 배당을 그 해 물가로 할인해 누적
+
+  // 한 해 진행 (모든 트랙 공통)
+  //  - 배당: 연초 보유액 × 그 해 배당률(연초 주가 기준) + 올해 적립분 × 배당률 × 0.5 (월 적립 → 연중 평균 반년 보유 근사)
+  //  - 주가: 연초 보유액 × (1+p) + 올해 적립분 × (1+p)^0.5
+  //  - 배당률(연초 주가 기준) = y × (1+g)^(t-1) / (1+p)^(t-1)  (주당배당은 g, 주가는 p로 성장)
+  //  - 초기 투자금은 0시점에 들어가 1년차 배당·주가상승을 온전히 받음
+  const step = (s, year, mode) => {
+    const pf = Math.max(1 + s.priceGrowth, 0);
+    const pp = Math.pow(pf, year - 1); // 연초 주가 지수
+    const eff = pp > 0 ? s.yieldRate * Math.pow(1 + s.growth, year - 1) / pp : 0;
+    const c = annualContribution * s.weight;
+    s.principal += c;
+    const div = s.value * eff + c * eff * 0.5;
+    s.value = s.value * pf + c * Math.sqrt(pf);
+    const tax = mode.afterTax ? div * s.taxRate : 0;
+    const net = div - tax;
+    s.yearlyDividend = net;
+    s.yearlyTax = tax;
+    s.yearlyTaxableIncome = div * s.taxable; // 금융소득(종합과세 판정용)
+    s.cumulativeDividend += net;
+    s.cumulativeTax += tax;
+    if (mode.reinvest) s.value += net;   // 재투자 O: (세후) 배당을 연말에 같은 종목에 재투자
+    else s.cashDividends += net;         // 재투자 X: 현금으로 보관
+  };
 
   for (let year = 1; year <= years; year++) {
-    // === 재투자 O (세전) ===
-    stockStates.forEach(s => {
-      const c = annualContribution * s.weight;
-      s.principal += c; s.value += c;
-    });
-    stockStates.forEach(s => { s.value *= (1 + s.priceGrowth); });
-    stockStates.forEach(s => {
-      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
-      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
-      s.yearlyDividend = div;
-      s.cumulativeDividend += div;
-      s.value += div;
-    });
+    stockStates.forEach(s => step(s, year, { reinvest: true, afterTax: false }));
+    noReStates.forEach(s => step(s, year, { reinvest: false, afterTax: false }));
+    stockStatesAfterTax.forEach(s => step(s, year, { reinvest: true, afterTax: true }));
+    noReStatesAfterTax.forEach(s => step(s, year, { reinvest: false, afterTax: true }));
 
-    // === 재투자 X (세전) ===
-    noReStates.forEach(s => {
-      const c = annualContribution * s.weight;
-      s.principal += c; s.value += c;
-    });
-    noReStates.forEach(s => { s.value *= (1 + s.priceGrowth); });
-    noReStates.forEach(s => {
-      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
-      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
-      s.yearlyDividend = div;
-      s.cashDividends += div;
-    });
+    const sum = (arr, k) => arr.reduce((acc, s) => acc + s[k], 0);
+    const totalValue = sum(stockStates, 'value');
+    const totalPrincipal = sum(stockStates, 'principal');
+    const totalDividend = sum(stockStates, 'yearlyDividend');
+    const totalCumDiv = sum(stockStates, 'cumulativeDividend');
 
-    // === 재투자 O (세후) - 종목별 세율로 매년 차감 ===
-    stockStatesAfterTax.forEach(s => {
-      const c = annualContribution * s.weight;
-      s.principal += c; s.value += c;
-    });
-    stockStatesAfterTax.forEach(s => { s.value *= (1 + s.priceGrowth); });
-    stockStatesAfterTax.forEach(s => {
-      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
-      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
-      const tax = div * s.taxRate;
-      const divAfterTax = div - tax;
-      s.yearlyDividend = divAfterTax;
-      s.yearlyTaxableIncome = div * s.taxable; // 금융소득(종합과세 판정용)
-      s.cumulativeDividend += divAfterTax;
-      s.cumulativeTax += tax;
-      s.value += divAfterTax; // 세후 금액만 재투자
-    });
-
-    // === 재투자 X (세후) ===
-    noReStatesAfterTax.forEach(s => {
-      const c = annualContribution * s.weight;
-      s.principal += c; s.value += c;
-    });
-    noReStatesAfterTax.forEach(s => { s.value *= (1 + s.priceGrowth); });
-    noReStatesAfterTax.forEach(s => {
-      const eff = s.yieldRate * Math.pow(1 + s.growth, year - 1) / Math.pow(1 + s.priceGrowth, year - 1);
-      const div = s.value * Math.max(eff, s.yieldRate * 0.3);
-      const tax = div * s.taxRate;
-      const divAfterTax = div - tax;
-      s.yearlyDividend = divAfterTax;
-      s.cashDividends += divAfterTax;
-      s.cumulativeTax += tax;
-    });
-
-    const totalValue = stockStates.reduce((sum, s) => sum + s.value, 0);
-    const totalPrincipal = stockStates.reduce((sum, s) => sum + s.principal, 0);
-    const totalDividend = stockStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
-    const totalCumDiv = stockStates.reduce((sum, s) => sum + s.cumulativeDividend, 0);
-
-    const noReValue = noReStates.reduce((sum, s) => sum + s.value, 0);
-    const noReCash = noReStates.reduce((sum, s) => sum + s.cashDividends, 0);
+    const noReValue = sum(noReStates, 'value');
+    const noReCash = sum(noReStates, 'cashDividends');
     const noReTotal = noReValue + noReCash;
-    const noReYearlyDiv = noReStates.reduce((sum, s) => sum + s.yearlyDividend, 0);
+    const noReYearlyDiv = sum(noReStates, 'yearlyDividend');
 
     // 세후 트랙
-    const totalValueAT = stockStatesAfterTax.reduce((sum, s) => sum + s.value, 0);
-    const totalDivAT = stockStatesAfterTax.reduce((sum, s) => sum + s.yearlyDividend, 0);
-    const totalCumDivAT = stockStatesAfterTax.reduce((sum, s) => sum + s.cumulativeDividend, 0);
-    const totalCumTaxAT = stockStatesAfterTax.reduce((sum, s) => sum + s.cumulativeTax, 0);
-    const taxableIncomeAT = stockStatesAfterTax.reduce((sum, s) => sum + s.yearlyTaxableIncome, 0);
-    const noReValueAT = noReStatesAfterTax.reduce((sum, s) => sum + s.value, 0);
-    const noReCashAT = noReStatesAfterTax.reduce((sum, s) => sum + s.cashDividends, 0);
+    const totalValueAT = sum(stockStatesAfterTax, 'value');
+    const totalDivAT = sum(stockStatesAfterTax, 'yearlyDividend');
+    const totalCumDivAT = sum(stockStatesAfterTax, 'cumulativeDividend');
+    const totalCumTaxAT = sum(stockStatesAfterTax, 'cumulativeTax');
+    const yearTaxAT = sum(stockStatesAfterTax, 'yearlyTax');
+    const taxableIncomeAT = sum(stockStatesAfterTax, 'yearlyTaxableIncome');
+    const noReValueAT = sum(noReStatesAfterTax, 'value');
+    const noReCashAT = sum(noReStatesAfterTax, 'cashDividends');
     const noReTotalAT = noReValueAT + noReCashAT;
-    const noReYearlyDivAT = noReStatesAfterTax.reduce((sum, s) => sum + s.yearlyDividend, 0);
-    const noReCumTaxAT = noReStatesAfterTax.reduce((sum, s) => sum + s.cumulativeTax, 0);
+    const noReYearlyDivAT = sum(noReStatesAfterTax, 'yearlyDividend');
+    const noReCumTaxAT = sum(noReStatesAfterTax, 'cumulativeTax');
 
     // 물가상승률 누적 디플레이터 (year년 후 1원의 현재 가치)
     const deflator = inflationOn ? Math.pow(1 + inflationRate, year) : 1;
+    // 누적 배당(흐름)은 해마다 그 해 디플레이터로 할인해 더함
+    realCumDiv += totalDividend / deflator;
+    realCumDivAT += totalDivAT / deflator;
+    realCumTaxAT += yearTaxAT / deflator;
+
+    // 종목 비중 (최대잉여법으로 소수 첫째 자리 합계 100.0 보장)
+    const rawW = stockStates.map(s => totalValue > 0 ? (s.value / totalValue) * 1000 : 0);
+    const baseW = rawW.map(Math.floor);
+    let left = totalValue > 0 ? 1000 - baseW.reduce((a, b) => a + b, 0) : 0;
+    rawW.map((r, i) => [r - baseW[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { baseW[i]++; left--; } });
 
     const row = {
       year,
@@ -2219,38 +2212,39 @@ function simulate() {
       realNoReinvestMonthlyDiv: Math.round(noReYearlyDiv / 12 / deflator),
       realYearlyDividend: Math.round(totalDividend / deflator),
       realNoReinvestYearlyDiv: Math.round(noReYearlyDiv / deflator),
-      realCumulativeDividend: Math.round(totalCumDiv / deflator),
-      realNoReinvestCash: Math.round(noReCash / deflator),
+      realCumulativeDividend: Math.round(realCumDiv),
+      realNoReinvestCash: Math.round(noReCash / deflator), // 현금으로 쥐고 있는 잔고 → 마지막 해 물가로 할인
       realReinvestGap: Math.round((totalValue - noReTotal) / deflator),
       // 세후 + 물가 반영 (실질)
       realTotalValueAT: Math.round(totalValueAT / deflator),
       realNoReinvestTotalAT: Math.round(noReTotalAT / deflator),
       realMonthlyDividendAT: Math.round(totalDivAT / 12 / deflator),
       realNoReinvestMonthlyDivAT: Math.round(noReYearlyDivAT / 12 / deflator),
-      realCumulativeDividendAT: Math.round(totalCumDivAT / deflator),
+      realCumulativeDividendAT: Math.round(realCumDivAT),
       realNoReinvestCashAT: Math.round(noReCashAT / deflator),
-      realCumulativeTaxAT: Math.round(totalCumTaxAT / deflator),
+      realCumulativeTaxAT: Math.round(realCumTaxAT),
       realReinvestGapAT: Math.round((totalValueAT - noReTotalAT) / deflator),
-      stockWeights: stockStates.map(s => ({
+      stockWeights: stockStates.map((s, i) => ({
         name: s.name,
-        weight: parseFloat(((s.value / totalValue) * 100).toFixed(1))
+        weight: baseW[i] / 10
       })),
     };
     yearlyData.push(row);
   }
 
   const finalYear = yearlyData[yearlyData.length - 1];
+  const pct = (a, b) => (b > 0 ? (a / b - 1) * 100 : 0).toFixed(1);
   const summary = {
     finalValue: finalYear.totalValue,
     totalPrincipal: finalYear.totalPrincipal,
     profit: finalYear.profit,
-    multiplier: (finalYear.totalValue / finalYear.totalPrincipal).toFixed(2),
+    multiplier: (finalYear.totalPrincipal > 0 ? finalYear.totalValue / finalYear.totalPrincipal : 0).toFixed(2),
     finalMonthlyDividend: finalYear.monthlyDividend,
     cumulativeDividend: finalYear.cumulativeDividend,
     noReinvestTotal: finalYear.noReinvestTotal,
     noReinvestMonthlyDiv: finalYear.noReinvestMonthlyDiv,
     reinvestGap: finalYear.reinvestGap,
-    reinvestGapPercent: ((finalYear.totalValue / finalYear.noReinvestTotal - 1) * 100).toFixed(1),
+    reinvestGapPercent: pct(finalYear.totalValue, finalYear.noReinvestTotal),
     // 실질가치
     realFinalValue: finalYear.realTotalValue,
     realNoReinvestTotal: finalYear.realNoReinvestTotal,
@@ -2260,7 +2254,7 @@ function simulate() {
     realReinvestGap: finalYear.realReinvestGap,
     // 물가 손실율 (명목 - 실질)
     inflationLoss: finalYear.totalValue - finalYear.realTotalValue,
-    inflationLossPercent: (((finalYear.totalValue - finalYear.realTotalValue) / finalYear.totalValue) * 100).toFixed(1),
+    inflationLossPercent: (finalYear.totalValue > 0 ? ((finalYear.totalValue - finalYear.realTotalValue) / finalYear.totalValue) * 100 : 0).toFixed(1),
   };
 
   return { yearlyData, summary, years, initial, monthly, inflationOn, inflationRate: inflationRate * 100 };
@@ -2900,8 +2894,9 @@ function renderResults(data) {
   document.getElementById('card2-label').textContent = `${years}년 후 자산 (재투자 X)`;
   document.getElementById('card2-value').textContent = formatKRW(s.noReinvestTotal);
 
-  document.getElementById('card3-value').textContent = '+' + formatKRW(s.reinvestGap);
-  document.getElementById('card3-sub').textContent = `${s.reinvestGapPercent}% 더 많음`;
+  document.getElementById('card3-value').textContent = formatKRWSigned(s.reinvestGap);
+  const gapPctTxt = Number(s.reinvestGapPercent) < 0 ? `${Math.abs(s.reinvestGapPercent).toFixed(1)}% 더 적음` : `${s.reinvestGapPercent}% 더 많음`;
+  document.getElementById('card3-sub').textContent = gapPctTxt;
 
   document.getElementById('card4-value').textContent = formatKRW(s.finalMonthlyDividend);
   document.getElementById('card4-sub').textContent = `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
@@ -2926,7 +2921,7 @@ function renderResults(data) {
       `명목 ${formatKRW(s.noReinvestTotal)}원의 오늘 가치`;
     
     // 실질 카드 3: 물가 손실분
-    document.getElementById('rcard3-value').textContent = '-' + formatKRW(s.inflationLoss);
+    document.getElementById('rcard3-value').textContent = s.inflationLoss > 0 ? '-' + formatKRW(s.inflationLoss) : '0';
     document.getElementById('rcard3-sub').textContent = 
       `${s.inflationLossPercent}% 가치 하락`;
     
@@ -2942,7 +2937,7 @@ function renderResults(data) {
   document.getElementById('card6-value').textContent = formatKRW(s.cumulativeDividend);
 
   // 차트 1 부제목
-  let subtitle1 = `같은 종목 같은 금액인데 배당 재투자 여부에 따라 <strong style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</strong> 차이가 납니다 (${s.reinvestGapPercent}% 더 많음)`;
+  let subtitle1 = `같은 종목 같은 금액인데 배당 재투자 여부에 따라 <strong style="color: var(--accent);">${formatKRW(Math.abs(s.reinvestGap))}원</strong> 차이가 납니다 (재투자 O가 ${gapPctTxt})`;
   if (inflOn) {
     subtitle1 += `<br><span style="color: #5A6B5A; font-weight: 700;">⚠️ 물가 ${data.inflationRate}% 반영 시 ${years}년 후 ${formatKRW(s.finalValue)}원의 실질 가치는 오늘 기준 ${formatKRW(s.realFinalValue)}원 (${s.inflationLossPercent}% 가치 하락)</span>`;
   }
@@ -2986,8 +2981,8 @@ function renderResults(data) {
           <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestCash)}</div>
         </td>
         <td class="col-gap">
-          +${formatKRW(row.reinvestGap)}
-          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 +${formatKRW(row.realReinvestGap)}</div>
+          ${formatKRWSigned(row.reinvestGap)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWSigned(row.realReinvestGap)}</div>
         </td>
       `;
     } else {
@@ -3000,7 +2995,7 @@ function renderResults(data) {
         <td class="col-no-reinvest-emph">${formatKRWTable(row.noReinvestTotal)}</td>
         <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDiv)}</td>
         <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCash)}</td>
-        <td class="col-gap">+${formatKRW(row.reinvestGap)}</td>
+        <td class="col-gap">${formatKRWSigned(row.reinvestGap)}</td>
       `;
     }
     tbody.appendChild(tr);
@@ -3054,8 +3049,8 @@ function renderResults(data) {
           <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestCashAT)}</div>
         </td>
         <td class="col-gap">
-          +${formatKRW(row.reinvestGapAT)}
-          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 +${formatKRW(row.realReinvestGapAT)}</div>
+          ${formatKRWSigned(row.reinvestGapAT)}
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWSigned(row.realReinvestGapAT)}</div>
         </td>
       `;
     } else {
@@ -3068,7 +3063,7 @@ function renderResults(data) {
         <td class="col-no-reinvest-emph">${formatKRWTable(row.noReinvestTotalAT)}</td>
         <td class="col-no-reinvest">${formatKRWTable(row.noReinvestMonthlyDivAT)}</td>
         <td class="col-no-reinvest">${formatKRWTable(row.noReinvestCashAT)}</td>
-        <td class="col-gap">+${formatKRW(row.reinvestGapAT)}</td>
+        <td class="col-gap">${formatKRWSigned(row.reinvestGapAT)}</td>
       `;
     }
     tbodyAT.appendChild(tr);
@@ -3076,12 +3071,12 @@ function renderResults(data) {
 
   // 인사이트
   document.getElementById('insight-title').innerHTML = 
-    `${years}년 후, 배당 재투자 한 사람과 안 한 사람의 차이는 <span style="color: var(--accent);">${formatKRW(s.reinvestGap)}원</span>`;
+    `${years}년 후, 배당 재투자 한 사람과 안 한 사람의 차이는 <span style="color: var(--accent);">${formatKRW(Math.abs(s.reinvestGap))}원</span>`;
   
   let insightDesc = `초기 ${formatKRW(data.initial)}원 + 월 ${formatKRW(data.monthly)}원 적립으로 시작했을 때, ` +
     `재투자한 사람은 <strong>${formatKRW(s.finalValue)}원</strong> · 월 배당 <strong style="color: var(--accent);">${formatKRW(s.finalMonthlyDividend)}원</strong>, ` +
     `재투자하지 않은 사람은 <strong style="color: #C4A57B;">${formatKRW(s.noReinvestTotal)}원</strong> · 월 배당 <strong style="color: #C4A57B;">${formatKRW(s.noReinvestMonthlyDiv)}원</strong>입니다. ` +
-    `같은 종목 같은 금액을 사도, 들어오는 배당을 다시 투자하느냐 마느냐가 <strong>${s.reinvestGapPercent}%의 격차</strong>를 만듭니다.`;
+    `같은 종목 같은 금액을 사도, 들어오는 배당을 다시 투자하느냐 마느냐가 <strong>${Math.abs(s.reinvestGapPercent).toFixed(1)}%의 격차</strong>를 만듭니다.`;
   
   if (inflOn) {
     insightDesc += `<br><br>📉 <strong style="color: #B8C4B8;">하지만 물가 ${data.inflationRate}%를 반영하면</strong> 이야기가 달라집니다. ` +
@@ -3097,16 +3092,30 @@ function renderResults(data) {
 // 메인 업데이트
 // ============================================================
 function update() {
-  const initial = Number(document.getElementById('initial').value) || 0;
-  const monthly = Number(document.getElementById('monthly').value) || 0;
-  const years = Number(document.getElementById('years').value) || 1;
+  const initial = readNonNeg('initial', true);
+  const monthly = readNonNeg('monthly', true);
+  const years = readYears(true);   // 1~50 정수로 보정한 값을 입력칸에도 되돌려 써서 라벨과 맞춤
+  readNonNeg('inflation-rate', true);
 
   document.getElementById('initial-hint').textContent = formatKRW(initial) + '원';
   document.getElementById('monthly-hint').textContent = '연간 ' + formatKRW(monthly * 12) + '원';
   document.getElementById('years-hint').textContent = years + '년 후 결과';
 
   const data = simulate();
-  if (!data) return;
+  const section = document.getElementById('results-section');
+  const emptyBox = document.getElementById('results-empty');
+  if (!data) {
+    // 계산할 수 없는 입력 → 이전 결과를 숨기고 안내
+    const totalWeight = holdings.reduce((s, h) => s + Math.max(0, Number(h.weight) || 0), 0);
+    emptyBox.innerHTML = !(totalWeight > 0)
+      ? '⚠️ 종목 비중 합계가 0%입니다. <b>STEP 02</b>에서 비중을 입력하면 결과가 표시됩니다.'
+      : '⚠️ 초기 투자금과 월 적립금이 모두 0원입니다. <b>STEP 01</b>에서 금액을 입력하면 결과가 표시됩니다.';
+    emptyBox.style.display = 'block';
+    section.classList.remove('active');
+    return;
+  }
+  emptyBox.style.display = 'none';
+  section.classList.add('active');
 
   renderResults(data);
   renderAreaChart(data);
