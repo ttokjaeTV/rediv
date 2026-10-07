@@ -959,6 +959,17 @@
   .wi-seg { display: inline-flex; flex-wrap: wrap; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
   .wi-seg button { border: 0; border-right: 1px solid var(--border); background: var(--white); padding: 8px 14px; font: 700 14px 'Pretendard', sans-serif; color: var(--ink-mute); cursor: pointer; }
   .wi-seg button.on { background: var(--dark-warm); color: #fff; }
+  .wi-chart-box { border: 1px solid var(--border); border-radius: 14px; background: var(--white); padding: 14px 16px 10px; margin-bottom: 14px; }
+  .wi-chart-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .wi-metric { display: inline-flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .wi-metric button { border: 0; border-right: 1px solid var(--border); background: #fff; padding: 7px 12px; font: 700 13px 'Pretendard', sans-serif; color: var(--ink-mute); cursor: pointer; }
+  .wi-metric button:last-child { border-right: 0; }
+  .wi-metric button.on { background: var(--accent); color: #fff; }
+  .wi-legend { font-size: 13px; font-weight: 700; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+  .wi-legend .ln { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--accent); margin-left: 6px; }
+  .wi-legend .ln.base { border-top: 2.5px dashed #8B6F47; margin-left: 0; }
+  .wi-chart-wrap { position: relative; height: 300px; }
+  .wi-chart-tip { font-size: 12px; color: var(--ink-mute); margin-top: 4px; }
   .wi-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 460px; }
   .wi-table th { background: var(--bg-alt); color: var(--ink-soft); font-weight: 700; padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
   .wi-table th:first-child, .wi-table td:first-child { text-align: left; }
@@ -976,6 +987,9 @@
     .wi-range { grid-column: 1 / 2; }
     .wi-name .now { display: inline; margin-left: 6px; }
     .wi-num { width: 70px; }
+    .wi-chart-box { padding: 12px 10px 8px; }
+    .wi-chart-wrap { height: 240px; }
+    .wi-metric button { padding: 7px 9px; font-size: 12px; }
     .wi-table { font-size: 13px; min-width: 0; }
     .wi-table th, .wi-table td { padding: 10px 5px; }
     .wi-table th { white-space: normal; word-break: keep-all; }
@@ -1321,6 +1335,18 @@
         <span class="wi-when-label">몇 년차를 볼까요?</span>
         <div class="wi-seg" id="wi-seg"></div>
         <span class="wi-when-direct">직접 <input type="number" id="wi-year" min="1" step="1" inputmode="numeric" aria-label="볼 연차">년차</span>
+      </div>
+      <div class="wi-chart-box">
+        <div class="wi-chart-head">
+          <div class="wi-metric" id="wi-metric">
+            <button type="button" data-m="md" class="on">월배당 (세전)</button>
+            <button type="button" data-m="mdat">월배당 (세후)</button>
+            <button type="button" data-m="tv">총 자산</button>
+          </div>
+          <div class="wi-legend"><span class="ln base"></span>지금 비중 <span class="ln alt"></span>바꾼 비중</div>
+        </div>
+        <div class="wi-chart-wrap"><canvas id="wi-chart"></canvas></div>
+        <div class="wi-chart-tip">그래프의 연도를 누르면 아래 표가 그 해 기준으로 바뀝니다.</div>
       </div>
       <div class="table-wrap wi-table-wrap">
         <table class="wi-table">
@@ -3218,6 +3244,8 @@ let wiYear = null;       // 볼 연차 (1 ~ 투자 기간). null이면 마지막
 let wiBase = null;       // 지금 비중 결과 (simulate)
 let wiBlocked = -1;      // 다른 종목이 모두 고정돼 바꿀 수 없었던 종목
 let wiSig = '';          // 위쪽 종목·비중 지문
+let wiMetric = 'md';     // 그래프 지표: md 월배당(세전) / mdat 월배당(세후) / tv 총 자산
+let wiChart = null;
 
 const wiR1 = v => Math.round(v * 10) / 10;
 const wiFmtPct = v => wiR1(v).toString() + '%';
@@ -3316,11 +3344,99 @@ function wiRefresh() {
     const cls = Math.abs(d) < 1 ? 'zero' : (d > 0 ? 'pos' : 'neg');
     return `<tr><td>${k}<span class="wi-tag">${t}</span></td><td>${formatKRWTable(x)}원</td><td class="new">${formatKRWTable(y)}원</td><td class="${cls}">${Math.abs(d) < 1 ? '–' : (d > 0 ? '+' : '−') + formatKRWTable(Math.abs(d)) + '원'}</td></tr>`;
   }).join('');
+  wiDrawChart(wiBase, alt, yr);
   document.getElementById('wi-apply').disabled = !changed;
   document.getElementById('wi-note').textContent = single
     ? '종목이 2개 이상일 때 쓸 수 있습니다. 위 STEP 02에서 [종목 추가]를 눌러 보세요.'
     : '세후는 일반계좌 기준(종목별 배당세 차감 후 재투자)입니다. 배당성장률·주가성장률은 위에 넣은 가정치를 그대로 씁니다.';
 }
+
+
+// 지금 비중 vs 바꾼 비중 — 연차별 그래프 (고른 연차에 세로선)
+function wiDrawChart(baseD, altD, yr) {
+  const el = document.getElementById('wi-chart'); if (!el) return;
+  const key = { md: 'monthlyDividend', mdat: 'monthlyDividendAT', tv: 'totalValue' }[wiMetric];
+  const A = baseD.yearlyData.map(d => d[key]), B = altD.yearlyData.map(d => d[key]);
+  const labels = baseD.yearlyData.map(d => d.year + '년');
+  const mobile = window.innerWidth < 768;
+  const markPlugin = {
+    id: 'wiMark',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea: ca } = chart;
+      const m = chart.getDatasetMeta(1).data[chart.options._yr - 1]; if (!m) return;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(58,47,38,0.35)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(m.x, ca.top); ctx.lineTo(m.x, ca.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      [[0, '#8B6F47'], [1, '#D9542B']].forEach(([i, c]) => {
+        const pt = chart.getDatasetMeta(i).data[chart.options._yr - 1]; if (!pt) return;
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = c; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      });
+      // 끝점 값 라벨
+      const last = chart.data.labels.length - 1;
+      const items = [[0, '#8B6F47', '지금'], [1, '#D9542B', '바꾼']].map(([i, c, t]) => {
+        const pt = chart.getDatasetMeta(i).data[last];
+        return pt ? { x: pt.x, y: pt.y, c, t: t + ' ' + formatKRW(chart.data.datasets[i].data[last]) } : null;
+      }).filter(Boolean).sort((a, b) => a.y - b.y);
+      if (items.length === 2 && items[1].y - items[0].y < 16) { const mid = (items[0].y + items[1].y) / 2; items[0].y = mid - 8; items[1].y = mid + 8; }
+      ctx.font = `800 ${mobile ? 10 : 12}px Pretendard, sans-serif`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      items.forEach(l => { ctx.fillStyle = l.c; ctx.fillText(l.t, l.x + 8, l.y); });
+      ctx.restore();
+    }
+  };
+  if (wiChart) {
+    wiChart.data.labels = labels;
+    wiChart.data.datasets[0].data = A; wiChart.data.datasets[1].data = B;
+    wiChart.options._yr = yr;
+    wiChart.update('none');
+    return;
+  }
+  wiChart = new Chart(el.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: '지금 비중', data: A, borderColor: '#8B6F47', borderWidth: 2.5, borderDash: [7, 5], pointRadius: 0, pointHoverRadius: 4, tension: 0.3, fill: false },
+      { label: '바꾼 비중', data: B, borderColor: '#D9542B', borderWidth: 3, pointRadius: 0, pointHoverRadius: 5, tension: 0.3, fill: false },
+    ] },
+    options: {
+      _yr: yr,
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      layout: { padding: { right: mobile ? 78 : 110, top: 8, left: mobile ? 12 : 4, bottom: 0 } },
+      onClick: (e, els, chart) => {
+        const pts = chart.getElementsAtEventForMode(e, 'index', { intersect: false }, false);
+        if (pts.length) { wiYear = pts[0].index + 1; wiRefresh(); }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Pretendard', size: mobile ? 10 : 12, weight: 600 }, color: '#8B8276', maxRotation: 0, autoSkip: true, maxTicksLimit: mobile ? 6 : 12 } },
+        y: { afterFit: (sc) => { sc.width += 8; }, grid: { color: '#E5DCC8' }, ticks: { font: { family: 'Pretendard', size: mobile ? 10 : 12, weight: 600 }, color: '#8B8276', callback: v => formatKRW(v) } },
+      },
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false },
+        tooltip: {
+          backgroundColor: '#3A2F26', titleFont: { family: 'Pretendard', weight: 800 }, bodyFont: { family: 'Pretendard', weight: 600 },
+          callbacks: {
+            title: items => items[0].label + ' 차',
+            label: c => ' ' + c.dataset.label + ': ' + formatKRWFull(c.parsed.y),
+            afterBody: items => {
+              if (items.length < 2) return '';
+              const d = items[1].parsed.y - items[0].parsed.y;
+              return ' 차이: ' + (d >= 0 ? '+' : '−') + formatKRWFull(Math.abs(d));
+            },
+          },
+        },
+      },
+    },
+    plugins: [markPlugin],
+  });
+}
+document.getElementById('wi-metric').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-m]'); if (!b) return;
+  wiMetric = b.dataset.m;
+  document.querySelectorAll('#wi-metric button').forEach(x => x.classList.toggle('on', x === b));
+  wiRefresh();
+});
 
 const wiList = document.getElementById('wi-list');
 wiList.addEventListener('input', (e) => {
