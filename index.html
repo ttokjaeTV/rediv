@@ -931,6 +931,58 @@
   }
 
   /* 결과 영역 숨김 (초기) */
+
+  /* ===== 비중 바꿔 보기 (what-if) ===== */
+  .wi-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin: 6px 0 10px; background: var(--white); }
+  .wi-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 2fr) auto auto; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .wi-row:last-child { border-bottom: 0; }
+  .wi-row.locked { background: #FDF6F1; }
+  .wi-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .wi-name .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .wi-name .nm { font-weight: 800; font-size: 15px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wi-name .now { display: block; font-size: 12px; font-weight: 600; color: var(--ink-mute); }
+  .wi-range, .wi-range:focus { width: 100%; accent-color: var(--accent); height: 26px; cursor: pointer; border: 0; padding: 0; margin: 0; background: transparent; box-shadow: none; outline: none; }
+  .wi-numwrap { display: flex; align-items: center; gap: 4px; font-weight: 800; color: var(--ink-soft); }
+  .wi-num { width: 78px; padding: 6px 8px; font: 800 17px/1.2 'Pretendard', sans-serif; color: var(--ink); text-align: right; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; }
+  .wi-num:focus { border-color: var(--accent); }
+  .wi-row.changed .wi-num { color: var(--accent); border-color: var(--accent-soft); }
+  .wi-lock { border: 1.5px solid var(--border); background: #fff; border-radius: 10px; width: 38px; height: 36px; font-size: 16px; cursor: pointer; opacity: 0.45; }
+  .wi-row.locked .wi-lock { opacity: 1; border-color: var(--accent); background: #FDF1EC; }
+  .wi-sum { font-size: 13px; color: var(--ink-mute); margin: 0 0 16px; line-height: 1.6; }
+  .wi-sum b { color: var(--accent); }
+  .wi-sum.warn { color: #C0392B; }
+  .wi-when { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
+  .wi-when-label { font-size: 14px; font-weight: 800; color: var(--ink); }
+  .wi-when-direct { font-size: 14px; font-weight: 700; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; }
+  #wi-year { width: 64px; padding: 6px 8px; font: 800 15px/1.2 'Pretendard', sans-serif; text-align: right; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; }
+  #wi-year:focus { border-color: var(--accent); }
+  .wi-seg { display: inline-flex; flex-wrap: wrap; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .wi-seg button { border: 0; border-right: 1px solid var(--border); background: var(--white); padding: 8px 14px; font: 700 14px 'Pretendard', sans-serif; color: var(--ink-mute); cursor: pointer; }
+  .wi-seg button.on { background: var(--dark-warm); color: #fff; }
+  .wi-table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 460px; }
+  .wi-table th { background: var(--bg-alt); color: var(--ink-soft); font-weight: 700; padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+  .wi-table th:first-child, .wi-table td:first-child { text-align: left; }
+  .wi-th-sub { display: block; font-size: 11px; font-weight: 600; color: var(--ink-mute); }
+  .wi-table td { padding: 12px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 700; white-space: nowrap; vertical-align: middle; line-height: 1.4; }
+  .wi-table td.new { color: var(--accent); font-weight: 800; }
+  .wi-table td .wi-tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--brown); background: #F3EADB; border-radius: 6px; padding: 2px 6px; margin-left: 6px; }
+  .wi-table td.pos { color: #C0392B; } .wi-table td.neg { color: #3A6F8F; } .wi-table td.zero { color: var(--ink-mute); }
+  .wi-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+  .wi-reset { border: 0; background: none; color: var(--ink-mute); font: 700 14px 'Pretendard', sans-serif; text-decoration: underline; cursor: pointer; }
+  .wi-note { margin-top: 10px; font-size: 13px; color: var(--ink-mute); line-height: 1.6; }
+  @media (max-width: 768px) {
+    .wi-row { grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 8px; padding: 10px 12px; }
+    .wi-name { grid-column: 1 / -1; }
+    .wi-range { grid-column: 1 / 2; }
+    .wi-name .now { display: inline; margin-left: 6px; }
+    .wi-num { width: 70px; }
+    .wi-table { font-size: 13px; min-width: 0; }
+    .wi-table th, .wi-table td { padding: 10px 5px; }
+    .wi-table th { white-space: normal; word-break: keep-all; }
+    .wi-table th:first-child, .wi-table td:first-child { padding-left: 8px; }
+    .wi-table td .wi-tag { display: block; width: fit-content; margin: 3px 0 0; }
+    .wi-th-sub { font-size: 10px; }
+  }
   .results-section { display: none; }
   .results-section.active { display: block; }
 
@@ -1043,7 +1095,7 @@
           <span class="step-text">STEP 02 / 포트폴리오 구성</span>
         </div>
         <div class="holdings-summary">
-          최대 5개 종목 · 비중 합계: <span class="weight-total" id="weight-total">100%</span>
+          최대 10개 종목 · 비중 합계: <span class="weight-total" id="weight-total">100%</span>
           <span class="weight-warn" id="weight-warn" style="display:none;">(100%로 맞춰주세요)</span>
         </div>
         <div class="data-status" id="data-status"></div>
@@ -1256,6 +1308,33 @@
       </div>
     </div>
 
+    <!-- 비중 바꿔 보기 (what-if) -->
+    <div class="card" id="whatif-card">
+      <div class="chart-title">비중 바꿔 보기 · 비중을 바꾸면 연배당·월배당이 어떻게 달라질까?</div>
+      <div class="chart-subtitle">
+        종목마다 슬라이더를 움직이거나 숫자를 직접 넣어 보세요. <strong style="color: var(--accent);">직접 바꾼 종목은 🔒 고정</strong>되고, 나머지 종목이 원래 비율대로 알아서 줄거나 늘어 합계 100%를 맞춥니다.<br>
+        위쪽 포트폴리오는 그대로 두고 비교만 합니다. 마음에 드는 비중이면 [이 비중으로 적용]을 누르세요.
+      </div>
+      <div class="wi-list" id="wi-list"></div>
+      <div class="wi-sum" id="wi-sum"></div>
+      <div class="wi-when">
+        <span class="wi-when-label">몇 년차를 볼까요?</span>
+        <div class="wi-seg" id="wi-seg"></div>
+        <span class="wi-when-direct">직접 <input type="number" id="wi-year" min="1" step="1" inputmode="numeric" aria-label="볼 연차">년차</span>
+      </div>
+      <div class="table-wrap wi-table-wrap">
+        <table class="wi-table">
+          <thead><tr><th id="wi-th-label">-</th><th>지금 비중</th><th>바꾼 비중</th><th>차이</th></tr></thead>
+          <tbody id="wi-body"></tbody>
+        </table>
+      </div>
+      <div class="wi-actions">
+        <button type="button" class="btn wi-apply" id="wi-apply" disabled>이 비중으로 적용</button>
+        <button type="button" class="wi-reset" id="wi-reset">처음 비중으로</button>
+      </div>
+      <div class="wi-note" id="wi-note"></div>
+    </div>
+
     <!-- 인사이트 박스 -->
     <div class="insight-box">
       <div class="insight-label">
@@ -1356,7 +1435,8 @@ const PRESETS = {
   '커스텀': { name: '커스텀', group: '⚙️ 직접 입력', desc: '내 종목 직접 입력', dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 },
 };
 
-const CHART_COLORS = ['#D9542B', '#E89A6F', '#8B6F47', '#C4A57B', '#5A6B5A'];
+const MAX_HOLDINGS = 10;
+const CHART_COLORS = ['#D9542B', '#E89A6F', '#8B6F47', '#C4A57B', '#5A6B5A', '#3A6F8F', '#9C3D54', '#7A9A3A', '#7E6BA0', '#4F8A8B'];
 
 // ============================================================
 // 전체 종목 데이터 (portfolio-sheet-data · 매일 자동 갱신)
@@ -1853,7 +1933,7 @@ function renderHoldings() {
   });
 
   updateWeightTotal();
-  document.getElementById('add-holding-btn').disabled = holdings.length >= 5;
+  document.getElementById('add-holding-btn').disabled = holdings.length >= MAX_HOLDINGS;
 
   // 숫자·이름 입력
   container.querySelectorAll('input[data-field]').forEach(el => {
@@ -2003,7 +2083,7 @@ function handleHoldingChange(e) {
 
 // 종목 추가 → 바로 검색창에 포커스
 document.getElementById('add-holding-btn').addEventListener('click', () => {
-  if (holdings.length >= 5) return;
+  if (holdings.length >= MAX_HOLDINGS) return;
   const newId = Math.max(...holdings.map(h => h.id)) + 1;
   const h = { id: newId, key: 'CUSTOM', customName: '', weight: 0 };
   applySelection(h, 'CUSTOM');
@@ -2073,12 +2153,12 @@ function readNonNeg(id, writeBack) {
   return v;
 }
 
-function simulate() {
+function simulate(hs = holdings) {
   const initial = readNonNeg('initial');
   const monthly = readNonNeg('monthly');
   const years = readYears(false);
   const weightOf = h => Math.max(0, Number(h.weight) || 0);
-  const totalWeight = holdings.reduce((s, h) => s + weightOf(h), 0);
+  const totalWeight = hs.reduce((s, h) => s + weightOf(h), 0);
   const inflationOn = document.getElementById('inflation-toggle').checked;
   const inflationRate = inflationOn ? readNonNeg('inflation-rate') / 100 : 0;
   // 세율은 종목별 holdingTax(h) — 미국 직투 15% / 국내 15.4% / 국내상장 ETF는 과표분에만 15.4%
@@ -2097,10 +2177,10 @@ function simulate() {
     taxRate: holdingTax(h).rate, taxable: holdingTax(h).taxable,
     yearlyDividend: 0, yearlyTax: 0, yearlyTaxableIncome: 0, cumulativeDividend: 0, cumulativeTax: 0,
   });
-  const stockStates = holdings.map(mkState);          // 재투자 O (세전)
-  const noReStates = holdings.map(mkState);           // 재투자 X (세전)
-  const stockStatesAfterTax = holdings.map(mkState);  // 재투자 O (세후) - 배당 때마다 종목별 세율 차감 후 재투자
-  const noReStatesAfterTax = holdings.map(mkState);   // 재투자 X (세후)
+  const stockStates = hs.map(mkState);          // 재투자 O (세전)
+  const noReStates = hs.map(mkState);           // 재투자 X (세전)
+  const stockStatesAfterTax = hs.map(mkState);  // 재투자 O (세후) - 배당 때마다 종목별 세율 차감 후 재투자
+  const noReStatesAfterTax = hs.map(mkState);   // 재투자 X (세후)
 
   [stockStates, noReStates, stockStatesAfterTax, noReStatesAfterTax].forEach(arr => {
     arr.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
@@ -3123,7 +3203,174 @@ function update() {
   renderBarChartReal(data);
   renderLineChart(data);
   renderDonutCharts(data);
+  renderWhatIf(data);
 }
+
+
+// ============================================================
+// 비중 바꿔 보기 (what-if)
+//  - 종목마다 슬라이더·숫자 입력. 직접 바꾼 종목은 🔒 고정
+//  - 고정 안 된 나머지 종목이 지금 비율대로 줄거나 늘어 합계 100% 유지
+// ============================================================
+let wiW = [];            // 바꾼 비중(%) — holdings 순서
+let wiLock = [];         // 고정 여부
+let wiYear = null;       // 볼 연차 (1 ~ 투자 기간). null이면 마지막 해
+let wiBase = null;       // 지금 비중 결과 (simulate)
+let wiBlocked = -1;      // 다른 종목이 모두 고정돼 바꿀 수 없었던 종목
+let wiSig = '';          // 위쪽 종목·비중 지문
+
+const wiR1 = v => Math.round(v * 10) / 10;
+const wiFmtPct = v => wiR1(v).toString() + '%';
+function wiBaseWeights() {
+  const w = holdings.map(h => Math.max(0, Number(h.weight) || 0));
+  const t = w.reduce((a, b) => a + b, 0);
+  return w.map(x => (t > 0 ? x / t * 100 : 0));
+}
+// k번째 종목을 x%로 바꿀 때 나머지 계산
+function wiSet(k, x) {
+  const n = wiW.length;
+  const lockedSum = wiW.reduce((s, v, i) => s + (i !== k && wiLock[i] ? v : 0), 0);
+  const free = [...Array(n).keys()].filter(i => i !== k && !wiLock[i]);
+  if (free.length === 0) { wiBlocked = k; return; }   // 맞춰 줄 종목이 없음 → 바꾸지 않고 안내
+  wiBlocked = -1;
+  x = Math.min(Math.max(0, x), 100 - lockedSum);
+  const rest = 100 - lockedSum - x;
+  const freeSum = free.reduce((s, i) => s + wiW[i], 0);
+  free.forEach(i => { wiW[i] = freeSum > 1e-9 ? wiW[i] * rest / freeSum : rest / free.length; });
+  wiW[k] = x;
+  wiLock[k] = true;
+}
+
+function renderWhatIf(baseData) {
+  if (!document.getElementById('whatif-card')) return;
+  wiBase = baseData;
+  // 종목·비중이 그대로면(투자금·기간·물가만 바뀐 경우) 바꿔 둔 비중을 유지, 아니면 지금 비중으로 다시 시작
+  const sig = holdings.map(h => h.id + ':' + h.key + ':' + (Number(h.weight) || 0)).join('|');
+  if (sig !== wiSig || wiW.length !== holdings.length) {
+    wiW = wiBaseWeights();
+    wiLock = holdings.map(() => false);
+    wiBlocked = -1;
+    wiSig = sig;
+  }
+  // 연차 빠른 버튼: 첫해 · 5년 단위 · 마지막 해
+  const Y = baseData.years;
+  const marks = [1]; for (let y = 5; y < Y; y += 5) marks.push(y); if (Y > 1) marks.push(Y);
+  if (wiYear == null || wiYear > Y) wiYear = Y;
+  document.getElementById('wi-seg').innerHTML = marks.map(y =>
+    `<button type="button" data-year="${y}">${y === 1 ? '첫해' : y + '년'}</button>`).join('');
+  const yIn = document.getElementById('wi-year'); yIn.max = Y;
+  const base = wiW.slice();
+  document.getElementById('wi-list').innerHTML = holdings.map((h, i) => `
+    <div class="wi-row" data-i="${i}">
+      <div class="wi-name"><span class="dot" style="background:${CHART_COLORS[i % CHART_COLORS.length]}"></span>
+        <span style="min-width:0"><span class="nm">${getHoldingDisplayName(h) || '종목 ' + (i + 1)}</span><span class="now">지금 ${wiFmtPct(base[i])}</span></span></div>
+      <input type="range" class="wi-range" data-i="${i}" min="0" max="100" step="1" aria-label="비중 슬라이더">
+      <div class="wi-numwrap"><input type="number" class="wi-num" data-i="${i}" min="0" max="100" step="1" inputmode="decimal" aria-label="바꾼 비중(%)">%</div>
+      <button type="button" class="wi-lock" data-i="${i}" title="고정 / 고정 풀기" aria-label="고정">🔒</button>
+    </div>`).join('');
+  wiRefresh();
+}
+
+function wiRefresh() {
+  if (!wiBase) return;
+  const single = holdings.length < 2;
+  const base = wiBaseWeights();
+  document.querySelectorAll('#wi-list .wi-row').forEach(row => {
+    const i = Number(row.dataset.i);
+    const range = row.querySelector('.wi-range'), num = row.querySelector('.wi-num');
+    range.value = wiW[i]; range.disabled = single; num.disabled = single;
+    if (document.activeElement !== num) num.value = wiR1(wiW[i]);
+    row.classList.toggle('locked', !!wiLock[i]);
+    row.classList.toggle('changed', Math.abs(wiW[i] - base[i]) >= 0.05);
+  });
+  const total = wiW.reduce((a, b) => a + b, 0);
+  const lockedN = wiLock.filter(Boolean).length;
+  const sumEl = document.getElementById('wi-sum');
+  const blocked = wiBlocked >= 0;
+  sumEl.classList.toggle('warn', blocked);
+  sumEl.innerHTML = `합계 <b>${wiFmtPct(total)}</b> · ` + (blocked
+    ? `다른 종목이 모두 🔒 고정돼 있어 이 종목은 바꿀 수 없어요. 🔒를 하나 눌러 풀어 주세요.`
+    : lockedN ? `🔒 고정 ${lockedN}개 · 고정 안 된 종목이 남은 비중을 원래 비율대로 나눠 가집니다`
+    : '바꾸고 싶은 종목의 슬라이더나 숫자를 움직여 보세요');
+
+  const changed = !single && wiW.some((v, i) => Math.abs(v - base[i]) >= 0.05);
+  const alt = changed ? simulate(holdings.map((h, i) => ({ ...h, weight: wiW[i] }))) : wiBase;
+  const Y = wiBase.years;
+  const yr = Math.min(Math.max(1, wiYear || Y), Y);
+  const pick = (d) => d.yearlyData[yr - 1];
+  const a = pick(wiBase), b = pick(alt);
+  const label = yr === 1 ? '첫해' : yr + '년차';
+  document.querySelectorAll('#wi-seg button').forEach(x => x.classList.toggle('on', Number(x.dataset.year) === yr));
+  const yIn = document.getElementById('wi-year');
+  if (document.activeElement !== yIn) yIn.value = yr;
+  document.getElementById('wi-th-label').innerHTML = label + '<span class="wi-th-sub">재투자 O 기준</span>';
+  const rows = [
+    ['연배당', a.yearlyDividend, b.yearlyDividend, '세전'],
+    ['월배당', a.monthlyDividend, b.monthlyDividend, '세전'],
+    ['연배당', a.yearlyDividendAT, b.yearlyDividendAT, '세후'],
+    ['월배당', a.monthlyDividendAT, b.monthlyDividendAT, '세후'],
+    ['총 자산', a.totalValue, b.totalValue, '세전'],
+  ];
+  document.getElementById('wi-body').innerHTML = rows.map(([k, x, y, t]) => {
+    const d = y - x;
+    const cls = Math.abs(d) < 1 ? 'zero' : (d > 0 ? 'pos' : 'neg');
+    return `<tr><td>${k}<span class="wi-tag">${t}</span></td><td>${formatKRWTable(x)}원</td><td class="new">${formatKRWTable(y)}원</td><td class="${cls}">${Math.abs(d) < 1 ? '–' : (d > 0 ? '+' : '−') + formatKRWTable(Math.abs(d)) + '원'}</td></tr>`;
+  }).join('');
+  document.getElementById('wi-apply').disabled = !changed;
+  document.getElementById('wi-note').textContent = single
+    ? '종목이 2개 이상일 때 쓸 수 있습니다. 위 STEP 02에서 [종목 추가]를 눌러 보세요.'
+    : '세후는 일반계좌 기준(종목별 배당세 차감 후 재투자)입니다. 배당성장률·주가성장률은 위에 넣은 가정치를 그대로 씁니다.';
+}
+
+const wiList = document.getElementById('wi-list');
+wiList.addEventListener('input', (e) => {
+  const i = Number(e.target.dataset.i);
+  if (e.target.classList.contains('wi-range')) { wiSet(i, Number(e.target.value)); wiRefresh(); }
+  else if (e.target.classList.contains('wi-num')) {
+    const v = parseFloat(e.target.value);
+    if (!isFinite(v)) return;
+    wiSet(i, wiR1(v)); wiRefresh();
+  }
+});
+wiList.addEventListener('focusout', (e) => {
+  if (e.target.classList.contains('wi-num')) e.target.value = wiR1(wiW[Number(e.target.dataset.i)]);
+});
+wiList.addEventListener('keydown', (e) => {
+  if (e.target.classList.contains('wi-num') && e.key === 'Enter') e.target.blur();
+});
+wiList.addEventListener('click', (e) => {
+  const b = e.target.closest('.wi-lock'); if (!b) return;
+  const i = Number(b.dataset.i);
+  wiLock[i] = !wiLock[i];
+  wiBlocked = -1;
+  wiRefresh();
+});
+document.getElementById('wi-seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-year]'); if (!b) return;
+  wiYear = Number(b.dataset.year);
+  wiRefresh();
+});
+document.getElementById('wi-year').addEventListener('input', (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (!isFinite(v) || !wiBase) return;
+  wiYear = Math.min(Math.max(1, v), wiBase.years);
+  wiRefresh();
+});
+document.getElementById('wi-year').addEventListener('blur', (e) => { if (wiBase) e.target.value = Math.min(Math.max(1, wiYear || wiBase.years), wiBase.years); });
+document.getElementById('wi-year').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
+document.getElementById('wi-reset').addEventListener('click', () => {
+  wiW = wiBaseWeights(); wiLock = holdings.map(() => false); wiBlocked = -1; wiRefresh();
+});
+document.getElementById('wi-apply').addEventListener('click', () => {
+  // 소수 첫째 자리로 반올림하고 합계 100% 맞추기 (오차는 가장 큰 종목에서 조정)
+  const r = wiW.map(wiR1);
+  const diff = wiR1(100 - r.reduce((a, b) => a + b, 0));
+  if (diff !== 0) { const k = r.indexOf(Math.max(...r)); r[k] = wiR1(r[k] + diff); }
+  holdings.forEach((h, i) => { h.weight = r[i]; });
+  renderHoldings();
+  update();
+  document.getElementById('whatif-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 // 입력 이벤트
 ['initial', 'monthly', 'years'].forEach(id => {
