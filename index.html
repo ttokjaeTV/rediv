@@ -1004,6 +1004,41 @@
 @media (max-width: 768px) {
   input[type=text], input[type=number], input[type=search], input[type=tel], input:not([type]), select, textarea { font-size: 16px !important; }
 }
+
+  /* ===== 결과 저장·공유 ===== */
+  .share-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: -6px 0 22px; }
+  .share-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 18px; border-radius: 12px;
+    border: 1.5px solid var(--accent); background: var(--white); color: var(--accent);
+    font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .share-btn:hover { background: var(--accent-soft); }
+  .share-btn.primary { background: var(--accent); color: var(--white); }
+  .share-btn.primary:hover { background: #C04620; }
+  .share-btn:disabled { opacity: 0.55; cursor: wait; }
+  .share-bar-note { flex-basis: 100%; font-size: 12.5px; color: var(--ink-mute); line-height: 1.5; word-break: keep-all; }
+  .reinvest-line {
+    background: #FDF1EC; border: 1px solid #F0C4B0; border-left: 4px solid var(--accent);
+    border-radius: 12px; padding: 14px 18px; margin: -8px 0 24px;
+    font-size: 15px; line-height: 1.7; color: #5A3A2A; word-break: keep-all;
+  }
+  .reinvest-line b { color: var(--accent); font-weight: 800; }
+  .share-toast {
+    position: fixed; left: 50%; bottom: 24px; z-index: 9999;
+    transform: translateX(-50%) translateY(16px); opacity: 0; pointer-events: none;
+    width: max-content; max-width: calc(100vw - 32px);
+    background: #3A2F26; color: #FBF7F0; padding: 14px 18px; border-radius: 14px;
+    font-size: 14px; font-weight: 700; line-height: 1.5; word-break: keep-all;
+    box-shadow: 0 8px 24px rgba(58, 47, 38, 0.3); transition: all 0.2s ease;
+  }
+  .share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .share-toast input { display: block; width: 100%; margin-top: 8px; font-size: 12px; padding: 8px 10px; border-radius: 8px; border: none; }
+  @media (max-width: 768px) {
+    .share-btn { flex: 1 1 0; padding: 12px 8px; font-size: 14px; }
+    .reinvest-line { font-size: 14.5px; padding: 12px 14px; }
+  }
 </style>
 </head>
 <body>
@@ -1142,6 +1177,12 @@
       <span class="step-text">STEP 03 / 시뮬레이션 결과</span>
     </div>
 
+    <div class="share-bar">
+      <button type="button" class="share-btn primary" data-share="image">📷 결과 이미지 저장</button>
+      <button type="button" class="share-btn" data-share="link">🔗 결과 공유 링크</button>
+      <div class="share-bar-note">이미지는 카톡·카페에 바로 올리는 요약 카드, 링크는 같은 조건이 채워진 계산기로 열립니다.</div>
+    </div>
+
     <!-- 결과 카드 - 명목가치 (세전) -->
     <div class="card-group-label">
       <span class="card-group-tag" style="background: var(--accent); color: var(--white);">명목가치 (세전)</span>
@@ -1169,6 +1210,9 @@
         <div class="stat-sub" id="card4-sub">-</div>
       </div>
     </div>
+
+    <!-- 재투자 효과 한 줄 요약 -->
+    <div class="reinvest-line" id="reinvest-line"></div>
 
     <!-- 결과 카드 - 실질가치 (물가 반영) - 물가 ON일 때만 표시 -->
     <div id="real-cards-section" style="display: none;">
@@ -1359,6 +1403,12 @@
         <button type="button" class="wi-reset" id="wi-reset">처음 비중으로</button>
       </div>
       <div class="wi-note" id="wi-note"></div>
+    </div>
+
+    <!-- 결과 저장·공유 (하단) -->
+    <div class="share-bar" style="margin: 0 0 24px;">
+      <button type="button" class="share-btn primary" data-share="image">📷 결과 이미지 저장</button>
+      <button type="button" class="share-btn" data-share="link">🔗 결과 공유 링크</button>
     </div>
 
     <!-- 인사이트 박스 -->
@@ -2139,6 +2189,11 @@ function onDataLoaded() {
       const keepGrowth = h.growthSrc === 'manual' ? { dg: h.dividendGrowth, pg: h.priceGrowth } : null;
       applySelection(h, h.key);
       if (keepGrowth) { h.dividendGrowth = keepGrowth.dg; h.priceGrowth = keepGrowth.pg; h.growthSrc = 'manual'; }
+      if (h.wantFwd) {   // 공유 링크: 보낸 사람이 '최근 분배 연환산'을 골랐던 종목
+        const it = UNIVERSE.get(h.key);
+        if (it && it.yieldFwd) { h.dividendYield = Math.round(it.yieldFwd * 100) / 100; h.yieldSrc = 'fwd'; }
+      }
+      delete h.wantFwd;
     }
   });
   renderDataStatus();
@@ -3006,6 +3061,7 @@ function renderResults(data) {
 
   document.getElementById('card4-value').textContent = formatKRW(s.finalMonthlyDividend);
   document.getElementById('card4-sub').textContent = `재투자 X: ${formatKRW(s.noReinvestMonthlyDiv)}원`;
+  document.getElementById('reinvest-line').innerHTML = reinvestLineHtml(s, years);
 
   // === 실질가치 카드 (물가 반영) - 물가 ON일 때만 표시 ===
   const realCardsSection = document.getElementById('real-cards-section');
@@ -3218,11 +3274,13 @@ function update() {
       : '⚠️ 초기 투자금과 월 적립금이 모두 0원입니다. <b>STEP 01</b>에서 금액을 입력하면 결과가 표시됩니다.';
     emptyBox.style.display = 'block';
     section.classList.remove('active');
+    lastResult = null;
     return;
   }
   emptyBox.style.display = 'none';
   section.classList.add('active');
 
+  lastResult = data;
   renderResults(data);
   renderAreaChart(data);
   renderBarChart(data);
@@ -3488,6 +3546,423 @@ document.getElementById('wi-apply').addEventListener('click', () => {
   document.getElementById('whatif-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
+// ============================================================
+// 결과 저장·공유
+//  - 재투자 효과 한 줄 요약
+//  - 결과 이미지: 캔버스로 직접 그린 요약 카드(외부 라이브러리 없음)
+//  - 공유 링크: 입력값·종목·비중을 ?s= 에 담아 같은 조건으로 열기
+// ============================================================
+let lastResult = null;
+const SHARE_SITE = 'ttokjaetv.github.io/rediv';
+const SHARE_FONT = "'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+const shareRound1 = v => Math.round(Number(v) * 10) / 10;
+const shareRound2 = v => Math.round((Number(v) || 0) * 100) / 100;
+const isCoarsePointer = () => !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+
+function reinvestLineHtml(s, years) {
+  const gap = Number(s.reinvestGap) || 0;
+  if (Math.abs(gap) < 10000) {
+    return `이 조합은 배당이 거의 없어 <b>재투자 효과가 크지 않습니다</b>. 배당이 나오는 종목을 섞으면 차이가 생깁니다.`;
+  }
+  if (gap < 0) {
+    return `이 조건에선 주가 하락 가정이 배당보다 커서, 배당을 현금으로 받아 두는 쪽이 <b>${formatKRW(-gap)}원</b> 더 많습니다.`;
+  }
+  const md = Number(s.finalMonthlyDividend) || 0, md0 = Number(s.noReinvestMonthlyDiv) || 0;
+  const mult = md0 > 0 ? md / md0 : 0;
+  const mdTxt = mult >= 1.05
+    ? `월배당도 ${formatKRW(md0)}원 → <b>${formatKRW(md)}원</b>으로 ${mult.toFixed(1)}배가 됩니다.`
+    : `월배당은 ${formatKRW(md0)}원 → <b>${formatKRW(md)}원</b>입니다.`;
+  return `배당을 현금으로 받아만 두면 ${years}년 뒤 ${formatKRW(s.noReinvestTotal)}원, 받을 때마다 다시 사 모으면 ${formatKRW(s.finalValue)}원 — `
+    + `재투자만으로 <b>${formatKRW(gap)}원(+${s.reinvestGapPercent}%)</b> 더 불어납니다. ` + mdTxt;
+}
+
+// ---------- 토스트 ----------
+let shareToastTimer = null;
+function shareToast(msg, url) {
+  let el = document.getElementById('share-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'share-toast'; el.className = 'share-toast'; el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  if (url) {
+    const inp = document.createElement('input');
+    inp.readOnly = true; inp.value = url;
+    inp.addEventListener('focus', () => inp.select());
+    el.appendChild(inp);
+  }
+  el.classList.add('show');
+  clearTimeout(shareToastTimer);
+  shareToastTimer = setTimeout(() => el.classList.remove('show'), url ? 10000 : 3500);
+}
+
+function preloadShareFonts() {
+  try {
+    if (document.fonts && document.fonts.load) {
+      ['600', '700', '800', '900'].forEach(w => document.fonts.load(`${w} 20px Pretendard`).catch(() => {}));
+    }
+  } catch (e) { /* 폰트 미리 불러오기 실패해도 기본 글꼴로 그림 */ }
+}
+
+// ---------- 결과 이미지 ----------
+function shareRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+// 띄어쓰기 단위 줄바꿈 (한 단어가 너무 길면 글자 단위)
+function shareWrap(ctx, text, maxW) {
+  const out = []; let line = '';
+  String(text).split(' ').forEach(word => {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width <= maxW) { line = test; return; }
+    if (line) out.push(line);
+    line = '';
+    for (const ch of word) {
+      const t = line + ch;
+      if (line && ctx.measureText(t).width > maxW) { out.push(line); line = ch; } else line = t;
+    }
+  });
+  if (line) out.push(line);
+  return out;
+}
+// 종목 묶음 단위 줄바꿈 (종목명이 줄 중간에서 끊기지 않게)
+function shareWrapTokens(ctx, tokens, sep, maxW) {
+  const out = []; let line = '';
+  tokens.forEach(tok => {
+    const test = line ? line + sep + tok : tok;
+    if (ctx.measureText(test).width <= maxW) { line = test; return; }
+    if (line) out.push(line);
+    if (ctx.measureText(tok).width <= maxW) { line = tok; return; }
+    const parts = shareWrap(ctx, tok, maxW);
+    line = parts.pop() || '';
+    out.push(...parts);
+  });
+  if (line) out.push(line);
+  return out;
+}
+
+function shareNiceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return m * p;
+  return 10 * p;
+}
+function drawShareChart(ctx, x0, y0, w, h, data, F) {
+  const rows = data.yearlyData;
+  const n = rows.length;
+  const series = [
+    { label: '재투자 O', vals: rows.map(r => r.totalValue), color: '#D9542B', width: 5 },
+    { label: '재투자 X', vals: rows.map(r => r.noReinvestTotal), color: '#8B6F47', width: 4 },
+  ];
+  if (data.inflationOn) series.push({ label: '재투자 O · 실질', vals: rows.map(r => r.realTotalValue), color: '#A03D1F', width: 3.5, dash: [14, 8] });
+  series.push({ label: '누적 원금', vals: rows.map(r => r.totalPrincipal), color: '#9B9387', width: 2.5, dash: [6, 6] });
+
+  const maxV = Math.max(1, ...series.flatMap(s => s.vals));
+  const step = shareNiceStep(maxV / 5);
+  const top = Math.ceil(maxV / step) * step;
+
+  ctx.font = F(700, 20);
+  const endTexts = series.map(s => `${s.label} ${formatKRW(s.vals[n - 1])}`);
+  const labelW = Math.max(...endTexts.map(t => ctx.measureText(t).width)) + 28;
+  ctx.font = F(600, 19);
+  const yLabW = Math.max(ctx.measureText(formatKRW(top)).width, 30) + 16;
+
+  const px = x0 + yLabW, py = y0 + 10, pw = w - yLabW - labelW - 14, ph = h - 10 - 44;
+  const X = i => px + (n === 1 ? pw : (i / (n - 1)) * pw);
+  const Y = v => py + ph - (v / top) * ph;
+
+  // 눈금·격자
+  ctx.lineWidth = 1; ctx.strokeStyle = '#EFE7DA'; ctx.fillStyle = '#8B8276';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.font = F(600, 19);
+  for (let v = 0; v <= top + step / 2; v += step) {
+    const yy = Y(v);
+    ctx.beginPath(); ctx.moveTo(px, yy); ctx.lineTo(px + pw, yy); ctx.stroke();
+    ctx.fillText(v === 0 ? '0' : formatKRW(v), px - 12, yy);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const every = Math.max(1, Math.ceil(n / 6));
+  rows.forEach((r, i) => {
+    if (i % every === 0 || i === n - 1) {
+      if (i !== n - 1 && n - 1 - i < every / 2) return;   // 마지막 연차 라벨과 겹치지 않게
+      ctx.fillText(`${r.year}년`, X(i), py + ph + 14);
+    }
+  });
+
+  // 선 (원금 → 실질 → X → O 순서로 그려 O가 맨 위)
+  [...series].reverse().forEach(s => {
+    ctx.save();
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.width; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    if (s.dash) ctx.setLineDash(s.dash);
+    ctx.beginPath();
+    s.vals.forEach((v, i) => { if (i === 0) ctx.moveTo(X(i), Y(v)); else ctx.lineTo(X(i), Y(v)); });
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // 끝점 라벨 (겹치면 아래로 밀기)
+  const labels = series.map((s, i) => ({ y: Y(s.vals[n - 1]), color: s.color, text: endTexts[i] })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 36) labels[i].y = labels[i - 1].y + 36;
+  ctx.font = F(700, 20); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  labels.forEach(l => {
+    const bx = px + pw + 14, tw = ctx.measureText(l.text).width;
+    ctx.fillStyle = '#FBF7F0'; ctx.strokeStyle = l.color; ctx.lineWidth = 2;
+    shareRoundRect(ctx, bx, l.y - 16, tw + 20, 32, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = l.color; ctx.fillText(l.text, bx + 10, l.y + 1);
+  });
+  ctx.textBaseline = 'alphabetic';
+}
+
+function buildShareCanvas(data) {
+  const s = data.summary, years = data.years;
+  const W = 1080, P = 64, IW = W - P * 2;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = 3600;
+  const ctx = cv.getContext('2d');
+  const F = (wt, px) => `${wt} ${px}px ${SHARE_FONT}`;
+  const INK = '#1A1A1A', SOFT = '#4A4A4A', MUTE = '#8B8276', ACC = '#D9542B', BROWN = '#8B6F47', CARD = '#FBF7F0', LINE = '#E5DCC8';
+  ctx.fillStyle = '#F5EFE6'; ctx.fillRect(0, 0, W, cv.height);
+  ctx.textBaseline = 'alphabetic';
+  let y = P;
+
+  // 헤더
+  ctx.fillStyle = '#3A2F26'; shareRoundRect(ctx, P, y, 68, 68, 16); ctx.fill();
+  ctx.fillStyle = CARD; ctx.font = F(900, 36); ctx.textAlign = 'center'; ctx.fillText('똑', P + 34, y + 47);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = INK; ctx.font = F(900, 32); ctx.fillText('똑재TV', P + 88, y + 32);
+  ctx.fillStyle = MUTE; ctx.font = F(700, 22); ctx.fillText('배당 재투자 계산기 결과', P + 88, y + 63);
+  const d = new Date();
+  const ds = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} 계산`;
+  ctx.textAlign = 'right'; ctx.font = F(700, 22); ctx.fillText(ds, W - P, y + 47); ctx.textAlign = 'left';
+  y += 68 + 32;
+
+  // 투자 조건
+  const inflTxt = data.inflationOn ? ` · 물가 ${shareRound1(data.inflationRate)}%` : '';
+  const cond = `초기 ${formatKRW(data.initial)}원 · 월 ${formatKRW(data.monthly)}원 · ${years}년${inflTxt}`;
+  const tokens = holdings
+    .filter(h => (Number(h.weight) || 0) > 0)
+    .map(h => `${getHoldingDisplayName(h)} ${shareRound1(h.weight)}%`);
+  const bw = IW - 64;
+  ctx.font = F(800, 30); const condLines = shareWrap(ctx, cond, bw);
+  ctx.font = F(600, 25); const holdLines = shareWrapTokens(ctx, tokens, '  ·  ', bw);
+  const condH = 30 + 22 + 18 + condLines.length * 42 + 8 + holdLines.length * 38 + 26;
+  ctx.fillStyle = CARD; shareRoundRect(ctx, P, y, IW, condH, 20); ctx.fill();
+  ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke();
+  let cy = y + 30 + 20;
+  ctx.fillStyle = ACC; ctx.font = F(800, 20); ctx.fillText('투자 조건', P + 32, cy);
+  cy += 18;
+  ctx.fillStyle = INK; ctx.font = F(800, 30);
+  condLines.forEach(l => { cy += 42; ctx.fillText(l, P + 32, cy - 8); });
+  cy += 8;
+  ctx.fillStyle = SOFT; ctx.font = F(600, 25);
+  holdLines.forEach(l => { cy += 38; ctx.fillText(l, P + 32, cy - 8); });
+  y += condH + 24;
+
+  // 메인 결과 (다크 브라운)
+  const heroH = data.inflationOn ? 286 : 246;
+  ctx.fillStyle = '#3A2F26'; shareRoundRect(ctx, P, y, IW, heroH, 24); ctx.fill();
+  ctx.fillStyle = ACC; shareRoundRect(ctx, P, y, 10, heroH, 5); ctx.fill();
+  ctx.fillStyle = '#F4D5C4'; ctx.font = F(700, 26); ctx.fillText(`${years}년 후 자산 · 배당 재투자 O`, P + 44, y + 58);
+  ctx.fillStyle = CARD; ctx.font = F(900, 88); ctx.fillText(`${formatKRW(s.finalValue)}원`, P + 44, y + 160);
+  ctx.fillStyle = '#C4A57B'; ctx.font = F(600, 26);
+  ctx.fillText(`원금 ${formatKRW(s.totalPrincipal)}원의 ${s.multiplier}배 · 세전 기준`, P + 44, y + 210);
+  if (data.inflationOn) {
+    ctx.fillStyle = '#B8C4B8'; ctx.font = F(600, 24);
+    ctx.fillText(`오늘 돈 가치로는 ${formatKRW(s.realFinalValue)}원 (물가 ${shareRound1(data.inflationRate)}% 반영)`, P + 44, y + 252);
+  }
+  y += heroH + 20;
+
+  // 2×2 카드
+  const gap = Number(s.reinvestGap) || 0;
+  const gapPct = Number(s.reinvestGapPercent) < 0 ? `${Math.abs(s.reinvestGapPercent).toFixed(1)}% 더 적음` : `${s.reinvestGapPercent}% 더 많음`;
+  const cells = [
+    ['재투자 X 자산', `${formatKRW(s.noReinvestTotal)}원`, '배당을 현금으로 받아 둔 경우', BROWN],
+    ['재투자 효과', `${formatKRWSigned(gap)}원`, `재투자 X보다 ${gapPct}`, ACC],
+    ['월배당 · 재투자 O', `${formatKRW(s.finalMonthlyDividend)}원`, `${years}년차 기준 (세전)`, ACC],
+    ['월배당 · 재투자 X', `${formatKRW(s.noReinvestMonthlyDiv)}원`, `${years}년차 기준 (세전)`, BROWN],
+  ];
+  const cw = (IW - 20) / 2, ch = 160;
+  cells.forEach((c, i) => {
+    const x = P + (i % 2) * (cw + 20), yy = y + Math.floor(i / 2) * (ch + 20);
+    ctx.fillStyle = CARD; shareRoundRect(ctx, x, yy, cw, ch, 18); ctx.fill();
+    ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = MUTE; ctx.font = F(700, 22); ctx.fillText(c[0], x + 28, yy + 44);
+    ctx.fillStyle = c[3]; ctx.font = F(900, 48); ctx.fillText(c[1], x + 28, yy + 106);
+    ctx.fillStyle = MUTE; ctx.font = F(600, 20); ctx.fillText(c[2], x + 28, yy + 140);
+  });
+  y += ch * 2 + 20 + 32;
+
+  // 자산 누적 그래프 (이미지 전용으로 다시 그림 — 화면 크기와 상관없이 글자 크기 일정, 2년 이상일 때만)
+  if (data.yearlyData.length >= 2) {
+    ctx.fillStyle = INK; ctx.font = F(800, 26); ctx.fillText('자산 누적 추이 · 재투자 O vs 재투자 X', P, y + 26);
+    y += 44;
+    const chartH = 540;
+    ctx.fillStyle = '#FFFFFF'; shareRoundRect(ctx, P, y, IW, chartH, 20); ctx.fill();
+    ctx.strokeStyle = LINE; ctx.lineWidth = 2; ctx.stroke();
+    drawShareChart(ctx, P + 24, y + 24, IW - 48, chartH - 48, data, F);
+    y += chartH + 32;
+  }
+
+  // 출처·면책
+  ctx.fillStyle = ACC; ctx.font = F(800, 26); ctx.fillText(SHARE_SITE, P, y + 26);
+  y += 44;
+  ctx.fillStyle = MUTE; ctx.font = F(600, 20);
+  shareWrap(ctx, '세전 기준 · 배당률은 최근 12개월 실지급 데이터, 배당·주가 성장률은 가정치입니다. 투자 권유가 아닌 참고용 계산입니다.', IW)
+    .forEach(l => { y += 30; ctx.fillText(l, P, y); });
+  y += P - 10;
+
+  const out = document.createElement('canvas');
+  out.width = W; out.height = Math.ceil(y);
+  out.getContext('2d').drawImage(cv, 0, 0);
+  return out;
+}
+
+function shareDataUrlToBlob(u) {
+  const bin = atob(u.split(',')[1]);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: 'image/png' });
+}
+
+async function shareImage(btn) {
+  if (!lastResult) { shareToast('먼저 투자 조건과 종목을 입력해 결과를 계산해 주세요.'); return; }
+  btn.disabled = true;
+  try {
+    // 캔버스는 동기로 그려서 모바일 공유창이 '사용자 클릭' 안에서 열리게 함
+    const blob = shareDataUrlToBlob(buildShareCanvas(lastResult).toDataURL('image/png'));
+    const d = new Date();
+    const fname = `배당재투자계산기_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.png`;
+    if (isCoarsePointer() && navigator.share && navigator.canShare && typeof File === 'function') {
+      const file = new File([blob], fname, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: '배당 재투자 계산기 결과' }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; /* 그 외 실패는 파일 저장으로 */ }
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    shareToast('결과 이미지를 저장했어요.');
+  } catch (e) {
+    console.warn(e);
+    shareToast('이미지를 만들지 못했어요. 화면 캡처로 저장해 주세요.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---------- 공유 링크 ----------
+function shareB64Encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function shareB64Decode(s) {
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4);
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function buildShareUrl() {
+  const inflOn = document.getElementById('inflation-toggle').checked;
+  const st = {
+    v: 1,
+    i: readNonNeg('initial'),
+    m: readNonNeg('monthly'),
+    y: readYears(false),
+    f: inflOn ? shareRound2(readNonNeg('inflation-rate')) : -1,
+    h: holdings.map(h => [
+      h.key, shareRound1(Math.max(0, Number(h.weight) || 0)),
+      shareRound2(h.dividendYield), shareRound2(h.dividendGrowth), shareRound2(h.priceGrowth),
+      h.yieldSrc || '', h.growthSrc || '',
+      h.key === 'CUSTOM' ? String(h.customName || '').slice(0, 40) : '',
+    ]),
+  };
+  return location.origin + location.pathname + '?s=' + shareB64Encode(JSON.stringify(st));
+}
+
+// 공유 링크로 열었을 때 입력값·종목 복원 (배당률은 데이터가 오면 최신 값으로 다시 채움)
+function restoreFromUrl() {
+  let st;
+  try {
+    const raw = new URLSearchParams(location.search).get('s');
+    if (!raw) return false;
+    st = JSON.parse(shareB64Decode(raw));
+  } catch (e) { console.warn('공유 링크 해석 실패', e); return false; }
+  if (!st || st.v !== 1 || !Array.isArray(st.h) || !st.h.length) return false;
+  const num = (v, dflt) => { const n = Number(v); return isFinite(n) ? n : dflt; };
+
+  const hs = [];
+  st.h.slice(0, MAX_HOLDINGS).forEach(a => {
+    if (!Array.isArray(a)) return;
+    const key = String(a[0] || '');
+    if (key !== 'CUSTOM' && !/^(KR|US):[A-Za-z0-9.\-]{1,15}$/.test(key)) return;
+    const h = { id: hs.length + 1, key, customName: '', weight: Math.max(0, num(a[1], 0)) };
+    applySelection(h, key);
+    const dy = num(a[2], 0), dg = num(a[3], 0), pg = num(a[4], 0), ys = a[5], gs = a[6];
+    if (key === 'CUSTOM') {
+      h.customName = String(a[7] || '').slice(0, 40);
+      h.dividendYield = dy; h.dividendGrowth = dg; h.priceGrowth = pg;
+    } else {
+      h.dividendYield = dy;
+      if (ys === 'manual') h.yieldSrc = 'manual';
+      else { h.yieldSrc = 'preset'; if (ys === 'fwd') h.wantFwd = true; }   // 'preset' → 데이터 로드 후 최신 배당률로 갱신
+      if (gs === 'manual') { h.dividendGrowth = dg; h.priceGrowth = pg; h.growthSrc = 'manual'; }
+      else if (h.growthSrc == null) { h.dividendGrowth = dg; h.priceGrowth = pg; h.growthSrc = 'type'; }
+    }
+    hs.push(h);
+  });
+  if (!hs.length) return false;
+  holdings = hs;
+
+  document.getElementById('initial').value = String(Math.max(0, num(st.i, 0)));
+  document.getElementById('monthly').value = String(Math.max(0, num(st.m, 0)));
+  document.getElementById('years').value = String(Math.max(1, Math.min(50, Math.round(num(st.y, 20)))));
+  const fv = num(st.f, -1);
+  const tg = document.getElementById('inflation-toggle');
+  tg.checked = fv >= 0;
+  if (fv >= 0) document.getElementById('inflation-rate').value = String(fv);
+  document.getElementById('inflation-input-wrap').style.display = tg.checked ? 'flex' : 'none';
+  return true;
+}
+
+async function shareCopyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+  } catch (e) { /* 아래 방식으로 재시도 */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch (e) { return false; }
+}
+
+async function shareLink(btn) {
+  if (!lastResult) { shareToast('먼저 투자 조건과 종목을 입력해 결과를 계산해 주세요.'); return; }
+  const url = buildShareUrl();
+  const s = lastResult.summary;
+  const text = `배당 재투자 계산기 · ${lastResult.years}년 뒤 월배당 ${formatKRW(s.finalMonthlyDividend)}원 시뮬레이션`;
+  if (isCoarsePointer() && navigator.share) {
+    try { await navigator.share({ title: '배당 재투자 계산기', text, url }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  if (await shareCopyText(url)) shareToast('링크를 복사했어요. 카톡·카페에 붙여넣으면 같은 조건으로 열립니다.');
+  else shareToast('아래 링크를 길게 눌러 복사해 주세요.', url);
+}
+
 // 입력 이벤트
 ['initial', 'monthly', 'years'].forEach(id => {
   document.getElementById(id).addEventListener('input', update);
@@ -3505,9 +3980,15 @@ document.getElementById('inflation-rate').addEventListener('input', update);
 document.getElementById('growth-guide-body').innerHTML = Object.values(TYPE_DEFAULTS)
   .filter(d => d.label !== '직접 입력')
   .map(d => `<tr><td>${d.label}</td><td class="n">${d.dg}%</td><td class="n">${d.pg}%</td></tr>`).join('');
+const restoredFromLink = restoreFromUrl();
 renderHoldings();
 update();
 loadAllData();
+preloadShareFonts();
+document.querySelectorAll('[data-share]').forEach(btn => {
+  btn.addEventListener('click', () => (btn.dataset.share === 'image' ? shareImage(btn) : shareLink(btn)));
+});
+if (restoredFromLink) shareToast('공유받은 조건으로 계산기를 열었어요. 배당률은 오늘 데이터로 다시 계산됩니다.');
 </script>
 </body>
 </html>
