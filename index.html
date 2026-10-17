@@ -6,6 +6,8 @@
 <title>배당 재투자 계산기 · 똑재TV</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- 공용 프리셋 (못 불러오면 아래 내장 값 사용) -->
+<script src="https://ttokjaetv.github.io/portfolio-sheet-data/data/presets.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <style>
   :root {
@@ -911,6 +913,19 @@
   .meta-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--ink-soft); line-height: 1.6; font-weight: 500; }
   .meta-line b { color: var(--ink); font-weight: 700; }
   .meta-line.warn { color: #B03A1A; font-weight: 700; }
+  /* 과대 가정 점검 */
+  .hcheck:empty { display: none; }
+  .hcheck { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #FDF1EC; border: 1px solid #F0C4B0; font-size: 12.5px; line-height: 1.6; color: #7A2E14; }
+  .hcheck.soft { background: var(--bg-alt); border-color: var(--border); color: var(--ink-soft); }
+  .hcheck.ok { background: #EEF3EC; border-color: #CCDCC6; color: #3F5A3A; }
+  .hcheck-row { display: flex; gap: 6px; align-items: flex-start; }
+  .hcheck-chip { flex: none; display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; background: #B03A1A; color: #fff; line-height: 1.6; margin-top: 1px; }
+  .hcheck.soft .hcheck-chip { background: var(--ink-mute); }
+  .hcheck.ok .hcheck-chip { background: #5B7A5B; }
+  .hcheck-act { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .hcheck b { font-weight: 800; }
+  .safe-all { margin-top: 12px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: #7A2E14; font-weight: 700; }
+  .safe-all.show { display: flex; }
   .meta-btn {
     border: 1px solid var(--accent); background: var(--white); color: var(--accent);
     border-radius: 999px; padding: 2px 10px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
@@ -1169,6 +1184,22 @@
         <div class="input-hint" style="margin-top: 0;">한국 장기 평균 약 2.5%</div>
       </div>
     </div>
+    <!-- 리밸런싱 옵션 -->
+    <div class="inflation-section">
+      <div class="inflation-toggle-wrap">
+        <div class="inflation-text-area">
+          <div class="inflation-title">⚖️ 1년에 한 번 비중 맞추기 (리밸런싱)</div>
+          <div class="inflation-desc">
+            끄면 종목마다 받은 배당을 그 종목에 다시 넣기만 해서, 배당률 높은 종목의 비중이 점점 커집니다(아래 비중 변화 도넛).
+            켜면 <strong>매년 말 처음 정한 비중대로 다시 나눕니다</strong> (사고파는 비용·세금은 넣지 않음).
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="rebalance-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
   </div>
 
   <!-- STEP 02: 포트폴리오 -->
@@ -1191,10 +1222,12 @@
       </button>
     </div>
     <div id="holdings-container"></div>
+    <div class="safe-all" id="safe-all"><span id="safe-all-msg"></span><button type="button" class="meta-btn" id="safe-all-btn">경고 종목 모두 보정값으로</button></div>
     <details class="growth-guide">
       <summary>배당률·성장률은 어떻게 채워지나요?</summary>
       <p><b>배당률</b>은 실제 데이터입니다. 최근 12개월 동안 실제로 지급된 배당·분배금 합계를 종가로 나눈 값이며, 매주 갱신됩니다. 상장 1년이 안 됐거나 분배금이 최근 크게 바뀐 종목은 ‘최근 분배 연환산’ 값으로 바꿔 볼 수 있습니다.</p>
       <p><b>배당성장률·주가성장률</b>은 미래 예측이라 실데이터가 아닌 <b>가정치</b>입니다. 추천 종목은 프리셋 값을, 나머지는 아래 유형별 기본값을 넣습니다. 본인 판단에 맞게 직접 고쳐서 돌려보세요.</p>
+      <p><b>과대 가정 경고</b>: 배당률 + 주가성장률이 연 12.5%(커버드콜 10.5%)를 넘거나, 배당성장률이 주가성장률보다 커서 시가배당률이 계속 올라가는 가정이면 종목 아래에 경고가 뜹니다. <b>[보정값 적용]</b>을 누르면 은퇴 역산·목표금액 계산기와 같은 보수적 기준(주가성장률 2.5%p 낮춤 → 총수익률 상한 10%·커버드콜 8% → 배당성장률 ≤ 주가성장률)으로 바꿉니다. 분배율이 상한보다 높은 커버드콜은 주가성장률이 마이너스로 나오는데, 분배금이 원금에서 나가는 만큼 주가가 빠지는 구조를 그대로 반영한 것입니다.</p>
       <table>
         <thead><tr><th>유형</th><th style="text-align:right">배당성장</th><th style="text-align:right">주가성장</th></tr></thead>
         <tbody id="growth-guide-body"></tbody>
@@ -1487,9 +1520,10 @@
     <h3>계산 방법과 가정</h3>
     <ul>
       <li><b>배당률</b>은 최근 12개월 동안 실제로 받은 배당 ÷ 종가로 구한 실데이터(매주 갱신)입니다. <b>배당성장률·주가성장률</b>은 미래 예측이라 가정치입니다.</li>
-      <li>그 해 배당 = 연초 보유액 × 그 해 배당률(1년차는 현재 배당률). 배당은 연말에 한 번 받는 것으로 보고, 재투자 O는 같은 종목을 다시 삽니다.</li>
-      <li>주당 배당은 배당성장률만큼, 주가는 주가성장률만큼 매년 자랍니다. 그래서 둘의 차이만큼 배당률도 해마다 조금씩 달라집니다.</li>
-      <li>초기 투자금은 1년차를 온전히 보유하고, 월 적립액은 1년 내내 고르게 들어오므로 들어온 해에는 반년치만 배당·주가상승을 반영합니다(연 중간 시점 근사).</li>
+      <li>한 달 단위로 계산합니다. 매달 말 그 달 배당을 받아 재투자 O는 같은 종목을 바로 다시 사고, 재투자 X는 현금으로 모아 둡니다. 그 달 적립금은 처음 정한 비중대로 삽니다. 초기 투자금은 시작할 때 한 번에 넣습니다.</li>
+      <li>첫 달 배당은 투자금 × 배당률 ÷ 12입니다. 이후 주당 배당은 배당성장률만큼, 주가는 주가성장률만큼 오른다고 봅니다(12개월 뒤 정확히 그만큼). 그래서 둘의 차이만큼 시가배당률이 조금씩 바뀝니다.</li>
+      <li>기본은 리밸런싱 없이 종목마다 받은 배당을 그 종목에 다시 넣습니다. ‘1년에 한 번 비중 맞추기’를 켜면 매년 말 처음 비중으로 다시 나눕니다(사고파는 비용·세금 없음).</li>
+      <li>종목 아래 경고는 계산을 바꾸지 않습니다. [보정값 적용]을 눌러야 그 종목의 배당성장률·주가성장률이 보수적 기준 값으로 바뀝니다.</li>
       <li>세후는 일반계좌 기준으로 배당받을 때마다 종목별 세율(미국 직투 15% · 국내 개별주 15.4% · 국내상장 ETF는 과세표준분에만 15.4%)을 떼고 남은 금액만 재투자합니다.</li>
       <li>원금 대비 배당률 = 마지막 해 연배당(세전) ÷ 그때까지 넣은 누적 원금입니다.</li>
     </ul>
@@ -1594,70 +1628,72 @@ const TJX = (() => {
 // 데이터 정의
 // ============================================================
 const PRESETS = {
-  // 배당률 = 실데이터를 못 불러왔을 때만 쓰는 임시값 (portfolio-sheet-data 2026-10-03·10-07 배당수익률) · 성장률 = 가정치
+  // 공용 파일 portfolio-sheet-data/data/presets.js 를 먼저 쓰고, 못 불러오면 아래 내장 값을 씀 (2026-10-17 공용 파일과 같은 값)
+  // 배당률 = 실데이터를 못 불러왔을 때만 쓰는 예비값 · 성장률 = 가정치 · cc = 커버드콜
+  // 규칙: 배당성장률 ≤ 주가성장률, 배당률 + 주가성장률 ≤ 12.5%(커버드콜 10.5%) — 자세한 설명은 presets.js 머리말
   // 월배당 적립 계산기(ttokjae-div)와 같은 목록·같은 값을 쓴다
   // ===== 국내상장 국내 ETF =====
-  'PLUS고배당주':                        { name: 'PLUS 고배당주',                                 group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.3, dividendGrowth: 10.5, priceGrowth: 7.0 },
-  'PLUS고배당주위클리CC':                   { name: 'PLUS 고배당주위클리커버드콜',                          group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 23.7, dividendGrowth: 1.0, priceGrowth: 1.0 },
-  'KODEX200타겟위클리':                   { name: 'KODEX 200타겟위클리커버드콜',                        group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 15.0, dividendGrowth: 0.5, priceGrowth: 3.0 },
-  'KODEX금융고배당TOP10타겟위클리':            { name: 'KODEX 금융고배당TOP10타겟위클리커버드콜',                 group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 16.5, dividendGrowth: 0.0, priceGrowth: 0.0 },
-  'TIGER배당커버드콜액티브':                  { name: 'TIGER 배당커버드콜액티브',                           group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 22.3, dividendGrowth: 1.0, priceGrowth: 1.0 },
-  'TIGER은행고배당플러스TOP10':              { name: 'TIGER 은행고배당플러스TOP10',                       group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 6.0 },
-  'TIMEFOLIO코리아플러스배당':               { name: 'TIME Korea플러스배당액티브',                        group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 8.0, dividendGrowth: 8.0, priceGrowth: 9.0 },
-  'TIGER코리아배당다우존스':                  { name: 'TIGER 코리아배당다우존스',                           group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.4, dividendGrowth: 7.0, priceGrowth: 7.0 },
-  'KODEX은행':                         { name: 'KODEX 은행',                                  group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.0, dividendGrowth: 4.0, priceGrowth: 5.5 },
-  'SOL금융지주플러스고배당':                   { name: 'SOL 금융지주플러스고배당',                            group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 3.8, dividendGrowth: 5.0, priceGrowth: 6.0 },
-  'KODEX주주환원고배당주':                   { name: 'KODEX 주주환원고배당주',                            group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 2.4, dividendGrowth: 7.0, priceGrowth: 7.0 },
-  'KODEX금융고배당TOP10':                 { name: 'KODEX 금융고배당TOP10',                          group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.3, dividendGrowth: 5.5, priceGrowth: 6.0 },
+  'PLUS고배당주':                        { name: 'PLUS 고배당주',                                 group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.6, dividendGrowth: 7.0, priceGrowth: 7.0, cc: 0 },
+  'PLUS고배당주위클리CC':                   { name: 'PLUS 고배당주위클리커버드콜',                          group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 24.1, dividendGrowth: -13.6, priceGrowth: -13.6, cc: 1 },
+  'KODEX200타겟위클리':                   { name: 'KODEX 200타겟위클리커버드콜',                        group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 19.8, dividendGrowth: -9.3, priceGrowth: -9.3, cc: 1 },
+  'KODEX금융고배당TOP10타겟위클리':            { name: 'KODEX 금융고배당TOP10타겟위클리커버드콜',                 group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 17.3, dividendGrowth: -6.8, priceGrowth: -6.8, cc: 1 },
+  'TIGER배당커버드콜액티브':                  { name: 'TIGER 배당커버드콜액티브',                           group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 28.1, dividendGrowth: -17.6, priceGrowth: -17.6, cc: 1 },
+  'TIGER은행고배당플러스TOP10':              { name: 'TIGER 은행고배당플러스TOP10',                       group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.2, dividendGrowth: 5.0, priceGrowth: 6.0, cc: 0 },
+  'TIMEFOLIO코리아플러스배당':               { name: 'TIME Korea플러스배당액티브',                        group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 9.4, dividendGrowth: 3.1, priceGrowth: 3.1, cc: 0 },
+  'TIGER코리아배당다우존스':                  { name: 'TIGER 코리아배당다우존스',                           group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.7, dividendGrowth: 7.0, priceGrowth: 7.0, cc: 0 },
+  'KODEX은행':                         { name: 'KODEX 은행',                                  group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.2, dividendGrowth: 4.0, priceGrowth: 5.5, cc: 0 },
+  'SOL금융지주플러스고배당':                   { name: 'SOL 금융지주플러스고배당',                            group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 4.1, dividendGrowth: 5.0, priceGrowth: 6.0, cc: 0 },
+  'KODEX주주환원고배당주':                   { name: 'KODEX 주주환원고배당주',                            group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 2.9, dividendGrowth: 7.0, priceGrowth: 7.0, cc: 0 },
+  'KODEX금융고배당TOP10':                 { name: 'KODEX 금융고배당TOP10',                          group: '🇰🇷 국내상장 국내 ETF', desc: '',  dividendYield: 5.0, dividendGrowth: 5.5, priceGrowth: 6.0, cc: 0 },
 
   // ===== 국내상장 해외 ETF =====
-  'KODEX미국배당다우존스':                   { name: 'KODEX 미국배당다우존스',                            group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 3.0, dividendGrowth: 9.0, priceGrowth: 8.0 },
-  'TIGER미국배당다우존스':                   { name: 'TIGER 미국배당다우존스',                            group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 3.1, dividendGrowth: 9.0, priceGrowth: 8.0 },
-  'ACE미국배당퀄리티':                      { name: 'ACE 미국배당퀄리티',                               group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 1.4, dividendGrowth: 9.0, priceGrowth: 8.0 },
-  'KODEX미국배당커버드콜액티브':                { name: 'KODEX 미국배당커버드콜액티브',                         group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 9.8, dividendGrowth: 1.5, priceGrowth: 4.5 },
-  'TIGER미국배당다우존스타겟2호':               { name: 'TIGER 미국배당다우존스타겟커버드콜2호',                    group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 10.7, dividendGrowth: 1.0, priceGrowth: 4.0 },
-  'KODEX미국나스닥100CC':                 { name: 'KODEX 미국나스닥100데일리커버드콜OTM',                  group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 22.6, dividendGrowth: 0.0, priceGrowth: 1.5 },
-  'RISE미국테크100CC':                   { name: 'RISE 미국테크100데일리고정커버드콜',                     group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 21.4, dividendGrowth: 0.0, priceGrowth: 0.5 },
-  'RISE미국배당100CC':                   { name: 'RISE 미국배당100데일리고정커버드콜',                     group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 17.3, dividendGrowth: 2.0, priceGrowth: 2.0 },
-  'TIGER미국나스닥100CC':                 { name: 'TIGER 미국나스닥100커버드콜(합성)',                    group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 12.6, dividendGrowth: 0.5, priceGrowth: 3.0 },
-  'SOL미국30년국채CC':                    { name: 'SOL 미국30년국채커버드콜(합성)',                       group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 13.4, dividendGrowth: 0.5, priceGrowth: 2.0 },
-  'SOL팔란티어CC혼합':                     { name: 'SOL 팔란티어커버드콜OTM채권혼합',                       group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 27.7, dividendGrowth: 0.0, priceGrowth: 0.0 },
+  'KODEX미국배당다우존스':                   { name: 'KODEX 미국배당다우존스',                            group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 3.0, dividendGrowth: 8.0, priceGrowth: 8.0, cc: 0 },
+  'TIGER미국배당다우존스':                   { name: 'TIGER 미국배당다우존스',                            group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 3.0, dividendGrowth: 8.0, priceGrowth: 8.0, cc: 0 },
+  'ACE미국배당퀄리티':                      { name: 'ACE 미국배당퀄리티',                               group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 1.4, dividendGrowth: 8.0, priceGrowth: 8.0, cc: 0 },
+  'KODEX미국배당커버드콜액티브':                { name: 'KODEX 미국배당커버드콜액티브',                         group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 9.8, dividendGrowth: 0.7, priceGrowth: 0.7, cc: 1 },
+  'TIGER미국배당다우존스타겟2호':               { name: 'TIGER 미국배당다우존스타겟커버드콜2호',                    group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 10.4, dividendGrowth: 0.1, priceGrowth: 0.1, cc: 1 },
+  'KODEX미국나스닥100CC':                 { name: 'KODEX 미국나스닥100데일리커버드콜OTM',                  group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 23.3, dividendGrowth: -12.8, priceGrowth: -12.8, cc: 1 },
+  'RISE미국테크100CC':                   { name: 'RISE 미국테크100데일리고정커버드콜',                     group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 22.0, dividendGrowth: -11.5, priceGrowth: -11.5, cc: 1 },
+  'RISE미국배당100CC':                   { name: 'RISE 미국배당100데일리고정커버드콜',                     group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 18.2, dividendGrowth: -7.7, priceGrowth: -7.7, cc: 1 },
+  'TIGER미국나스닥100CC':                 { name: 'TIGER 미국나스닥100커버드콜(합성)',                    group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 12.6, dividendGrowth: -2.1, priceGrowth: -2.1, cc: 1 },
+  'SOL미국30년국채CC':                    { name: 'SOL 미국30년국채커버드콜(합성)',                       group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 13.2, dividendGrowth: -2.7, priceGrowth: -2.7, cc: 1 },
+  'SOL팔란티어CC혼합':                     { name: 'SOL 팔란티어커버드콜OTM채권혼합',                       group: '🇰🇷 국내상장 해외 ETF', desc: '',  dividendYield: 27.4, dividendGrowth: -16.9, priceGrowth: -16.9, cc: 1 },
 
   // ===== 국내 개별주 =====
-  '삼성전자':                            { name: '삼성전자',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 0.5, dividendGrowth: 4.0, priceGrowth: 6.0 },
-  'SK하이닉스':                          { name: 'SK하이닉스',                                    group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 0.2, dividendGrowth: 5.0, priceGrowth: 12.0 },
-  'KT&G':                            { name: 'KT&G',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.7, dividendGrowth: 4.0, priceGrowth: 4.0 },
-  'KB금융':                            { name: 'KB금융',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 2.9, dividendGrowth: 8.0, priceGrowth: 7.0 },
-  '신한지주':                            { name: '신한지주',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 2.8, dividendGrowth: 7.0, priceGrowth: 6.5 },
-  '하나금융지주':                          { name: '하나금융지주',                                    group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.5, dividendGrowth: 6.0, priceGrowth: 6.0 },
-  '우리금융지주':                          { name: '우리금융지주',                                    group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 4.2, dividendGrowth: 5.0, priceGrowth: 5.0 },
-  '기업은행':                            { name: '기업은행',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 6.2, dividendGrowth: 4.0, priceGrowth: 4.5 },
-  '현대차':                             { name: '현대차',                                       group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 2.9, dividendGrowth: 5.0, priceGrowth: 7.0 },
-  '기아':                              { name: '기아',                                        group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 6.0, dividendGrowth: 5.0, priceGrowth: 7.0 },
-  'SK텔레콤':                           { name: 'SK텔레콤',                                     group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 1.9, dividendGrowth: 3.0, priceGrowth: 4.0 },
-  'KT':                              { name: 'KT',                                        group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 4.6, dividendGrowth: 4.0, priceGrowth: 4.5 },
-  'POSCO홀딩스':                        { name: 'POSCO홀딩스',                                  group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 2.9, dividendGrowth: 4.0, priceGrowth: 5.0 },
+  '삼성전자':                            { name: '삼성전자',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 0.6, dividendGrowth: 4.0, priceGrowth: 6.0, cc: 0 },
+  'SK하이닉스':                          { name: 'SK하이닉스',                                    group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 0.2, dividendGrowth: 5.0, priceGrowth: 12.0, cc: 0 },
+  'KT&G':                            { name: 'KT&G',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.5, dividendGrowth: 4.0, priceGrowth: 4.0, cc: 0 },
+  'KB금융':                            { name: 'KB금융',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.0, dividendGrowth: 7.0, priceGrowth: 7.0, cc: 0 },
+  '신한지주':                            { name: '신한지주',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.1, dividendGrowth: 6.5, priceGrowth: 6.5, cc: 0 },
+  '하나금융지주':                          { name: '하나금융지주',                                    group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.7, dividendGrowth: 6.0, priceGrowth: 6.0, cc: 0 },
+  '우리금융지주':                          { name: '우리금융지주',                                    group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 4.4, dividendGrowth: 5.0, priceGrowth: 5.0, cc: 0 },
+  '기업은행':                            { name: '기업은행',                                      group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 6.3, dividendGrowth: 4.0, priceGrowth: 4.5, cc: 0 },
+  '현대차':                             { name: '현대차',                                       group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.2, dividendGrowth: 5.0, priceGrowth: 7.0, cc: 0 },
+  '기아':                              { name: '기아',                                        group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 6.1, dividendGrowth: 5.0, priceGrowth: 6.4, cc: 0 },
+  'SK텔레콤':                           { name: 'SK텔레콤',                                     group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 2.1, dividendGrowth: 3.0, priceGrowth: 4.0, cc: 0 },
+  'KT':                              { name: 'KT',                                        group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 4.8, dividendGrowth: 4.0, priceGrowth: 4.5, cc: 0 },
+  'POSCO홀딩스':                        { name: 'POSCO홀딩스',                                  group: '🇰🇷 국내 개별주', desc: '',  dividendYield: 3.0, dividendGrowth: 4.0, priceGrowth: 5.0, cc: 0 },
 
   // ===== 미국 직투 (주식·ETF) =====
-  'SCHD':                            { name: 'SCHD (배당성장 ETF)',                           group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 3.2, dividendGrowth: 9.0, priceGrowth: 8.0 },
-  'JEPI':                            { name: 'JEPI (월배당 고배당 ETF)',                        group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 8.1, dividendGrowth: 2.0, priceGrowth: 4.0 },
-  'JEPQ':                            { name: 'JEPQ (월배당 나스닥 ETF)',                        group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 11.2, dividendGrowth: 3.0, priceGrowth: 6.0 },
-  'VYM':                             { name: 'VYM (안정 고배당 ETF)',                          group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.3, dividendGrowth: 7.0, priceGrowth: 7.0 },
-  'VOO':                             { name: 'VOO (S&P500 ETF)',                          group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 1.0, dividendGrowth: 6.0, priceGrowth: 10.0 },
-  'QQQ':                             { name: 'QQQ (나스닥100 ETF)',                          group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 0.4, dividendGrowth: 8.0, priceGrowth: 12.0 },
-  'O':                               { name: 'O (리얼티인컴 · 월배당 리츠)',                        group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 6.0, dividendGrowth: 4.0, priceGrowth: 3.0 },
-  'KO':                              { name: 'KO (코카콜라)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.4, dividendGrowth: 5.0, priceGrowth: 6.0 },
-  'PEP':                             { name: 'PEP (펩시코)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 4.6, dividendGrowth: 6.0, priceGrowth: 6.0 },
-  'JNJ':                             { name: 'JNJ (존슨앤존슨)',                               group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.1, dividendGrowth: 6.0, priceGrowth: 6.0 },
-  'PG':                              { name: 'PG (P&G)',                                  group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.9, dividendGrowth: 5.0, priceGrowth: 7.0 },
-  'MCD':                             { name: 'MCD (맥도날드)',                                group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 3.2, dividendGrowth: 8.0, priceGrowth: 8.0 },
-  'MO':                              { name: 'MO (알트리아)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 6.2, dividendGrowth: 4.0, priceGrowth: 2.0 },
-  'XOM':                             { name: 'XOM (엑슨모빌)',                                group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.5, dividendGrowth: 4.0, priceGrowth: 5.0 },
-  'CVX':                             { name: 'CVX (셰브론)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 3.4, dividendGrowth: 5.0, priceGrowth: 5.0 },
-  'T':                               { name: 'T (AT&T)',                                  group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 4.5, dividendGrowth: 1.0, priceGrowth: 3.0 },
-  'VZ':                              { name: 'VZ (버라이즌)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 6.1, dividendGrowth: 2.0, priceGrowth: 3.0 },
-  'AAPL':                            { name: 'AAPL (애플)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 0.3, dividendGrowth: 5.0, priceGrowth: 12.0 },
-  'MSFT':                            { name: 'MSFT (마이크로소프트)',                            group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 0.7, dividendGrowth: 10.0, priceGrowth: 13.0 },
+  'SCHD':                            { name: 'SCHD (배당성장 ETF)',                           group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 3.2, dividendGrowth: 8.0, priceGrowth: 8.0, cc: 0 },
+  'JEPI':                            { name: 'JEPI (월배당 고배당 ETF)',                        group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 8.0, dividendGrowth: 2.0, priceGrowth: 2.5, cc: 1 },
+  'JEPQ':                            { name: 'JEPQ (월배당 나스닥 ETF)',                        group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 11.3, dividendGrowth: -0.8, priceGrowth: -0.8, cc: 1 },
+  'VYM':                             { name: 'VYM (안정 고배당 ETF)',                          group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.3, dividendGrowth: 7.0, priceGrowth: 7.0, cc: 0 },
+  'VOO':                             { name: 'VOO (S&P500 ETF)',                          group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 1.0, dividendGrowth: 6.0, priceGrowth: 10.0, cc: 0 },
+  'QQQ':                             { name: 'QQQ (나스닥100 ETF)',                          group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 0.5, dividendGrowth: 8.0, priceGrowth: 12.0, cc: 0 },
+  'O':                               { name: 'O (리얼티인컴 · 월배당 리츠)',                        group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 5.9, dividendGrowth: 3.0, priceGrowth: 3.0, cc: 0 },
+  'KO':                              { name: 'KO (코카콜라)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.3, dividendGrowth: 5.0, priceGrowth: 6.0, cc: 0 },
+  'PEP':                             { name: 'PEP (펩시코)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 4.6, dividendGrowth: 6.0, priceGrowth: 6.0, cc: 0 },
+  'JNJ':                             { name: 'JNJ (존슨앤존슨)',                               group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.1, dividendGrowth: 6.0, priceGrowth: 6.0, cc: 0 },
+  'PG':                              { name: 'PG (P&G)',                                  group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.8, dividendGrowth: 5.0, priceGrowth: 7.0, cc: 0 },
+  'MCD':                             { name: 'MCD (맥도날드)',                                group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 3.2, dividendGrowth: 8.0, priceGrowth: 8.0, cc: 0 },
+  'MO':                              { name: 'MO (알트리아)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 6.0, dividendGrowth: 2.0, priceGrowth: 2.0, cc: 0 },
+  'XOM':                             { name: 'XOM (엑슨모빌)',                                group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 2.4, dividendGrowth: 4.0, priceGrowth: 5.0, cc: 0 },
+  'CVX':                             { name: 'CVX (셰브론)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 3.2, dividendGrowth: 5.0, priceGrowth: 5.0, cc: 0 },
+  'T':                               { name: 'T (AT&T)',                                  group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 4.9, dividendGrowth: 1.0, priceGrowth: 3.0, cc: 0 },
+  'VZ':                              { name: 'VZ (버라이즌)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 6.4, dividendGrowth: 2.0, priceGrowth: 3.0, cc: 0 },
+  'AAPL':                            { name: 'AAPL (애플)',                                 group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 0.3, dividendGrowth: 5.0, priceGrowth: 12.0, cc: 0 },
+  'MSFT':                            { name: 'MSFT (마이크로소프트)',                            group: '🇺🇸 미국 직투 (주식·ETF)', desc: '',  dividendYield: 0.7, dividendGrowth: 10.0, priceGrowth: 11.8, cc: 0 },
 
   '커스텀': { name: '커스텀', group: '⚙️ 직접 입력', desc: '내 종목 직접 입력', dividendYield: 4.0, dividendGrowth: 5.0, priceGrowth: 7.0 },
 };
@@ -1713,6 +1749,12 @@ const PRESET_CODE = {
   .forEach(t => { PRESET_CODE[t] = 'US:' + t; });
 const CODE_TO_PRESET = {};
 Object.entries(PRESET_CODE).forEach(([p, k]) => { CODE_TO_PRESET[k] = p; });
+// 공용 프리셋으로 숫자만 덮어씀 (이름·목록은 이 계산기 것 유지)
+const SHARED = (window.TTOKJAE_PRESETS && Array.isArray(window.TTOKJAE_PRESETS.groups)) ? window.TTOKJAE_PRESETS : null;
+if (SHARED) SHARED.groups.forEach(([g, rows]) => rows.forEach(([key, name, y, dg, pg, cc]) => {
+  const p = PRESETS[CODE_TO_PRESET[key]];
+  if (p) { p.dividendYield = y; p.dividendGrowth = dg; p.priceGrowth = pg; p.cc = cc; }
+}));
 
 const UNIVERSE = new Map();     // 'KR:161510' | 'US:SCHD' → 종목 정보
 let UNIVERSE_LIST = [];
@@ -1857,7 +1899,7 @@ const TYPE_DEFAULTS = {
   currency:  { label: '통화',                   dg: 0,   pg: 1.0 },
   etc:       { label: '기타',                   dg: 0,   pg: 3.0 },
   krDivEtf:  { label: '배당주 ETF(국내상장)',   dg: 6.0, pg: 6.0 },
-  usDiv100:  { label: '미국배당다우존스(SCHD형)', dg: 9.0, pg: 8.0 },
+  usDiv100:  { label: '미국배당다우존스(SCHD형)', dg: 8.0, pg: 8.0 },
   overseasEtf:{ label: '해외주식 ETF(국내상장)', dg: 6.0, pg: 8.0 },
   krEqEtf:   { label: '국내주식 ETF',           dg: 5.0, pg: 6.0 },
   krStock:   { label: '국내 개별주',            dg: 4.0, pg: 5.0 },
@@ -1867,6 +1909,7 @@ const TYPE_DEFAULTS = {
   usStock:   { label: '미국 개별주',            dg: 5.0, pg: 7.0 },
   custom:    { label: '직접 입력',              dg: 5.0, pg: 7.0 },
 };
+if (SHARED && SHARED.types) Object.entries(SHARED.types).forEach(([k, v]) => { if (TYPE_DEFAULTS[k] && Array.isArray(v)) { TYPE_DEFAULTS[k].dg = v[0]; TYPE_DEFAULTS[k].pg = v[1]; } });
 const RATE_RE = /금리|KOFR|SOFR|CD|머니마켓|단기자금/;
 function classify(it) {
   const n = it.name;
@@ -2085,6 +2128,82 @@ function renderComboList(listEl, query) {
 // ============================================================
 // 종목 하단 정보줄 (데이터 출처·기준 표시)
 // ============================================================
+// ============================================================
+// 과대 가정 점검 — 은퇴 역산·목표금액·노후 자금 고갈 시뮬레이터와 같은 '보수적 보정' 기준
+//  · 총수익률(배당률 + 주가성장률)이 '보정 전 상한' = 보정 상한(일반 10%, 커버드콜 8%) + 낮춰 잡기 2.5%p
+//    = 일반 12.5%, 커버드콜 10.5% 를 넘으면 경고 (공용 프리셋도 이 선을 넘지 않게 맞춰 둠)
+//  · 배당성장률이 주가성장률보다 크면 시가배당률이 해마다 올라가는 가정 → 알림(기간 끝 1.5배 이상이면 경고)
+//  · [보정값 적용] = 주가성장률 2.5%p 낮춤 → 총수익률이 상한을 넘으면 상한에 맞춤 → 배당성장률 ≤ 주가성장률
+// ============================================================
+const SAFE = Object.assign({ haircut: 2.5, trCap: 10, ccCap: 8 }, (SHARED && SHARED.rules) || {}, { driftWarn: 1.5 });
+const CC_RE = /커버드콜|프리미엄|옵션|버퍼|covered call|buywrite|yieldmax|JEPI|JEPQ/i;
+function isCoveredCall(h) {
+  const it = UNIVERSE.get(h.key);
+  if (it) return it.type === 'cc';
+  const p = PRESETS[CODE_TO_PRESET[h.key]];
+  if (p) return p.cc != null ? !!p.cc : CC_RE.test(p.name);
+  return CC_RE.test(h.customName || '');
+}
+const r1 = v => Math.round(v * 10) / 10;   // 소수 첫째 자리
+function safeValues(h) {
+  const y = Number(h.dividendYield) || 0, dg = Number(h.dividendGrowth) || 0, pg = Number(h.priceGrowth) || 0;
+  const lim = isCoveredCall(h) ? Math.min(SAFE.trCap, SAFE.ccCap) : SAFE.trCap;
+  let p = pg - SAFE.haircut;
+  if (y + p > lim) p = lim - y;
+  return { pg: r1(p), dg: r1(Math.min(dg, p)), lim };
+}
+function checkHolding(h, years) {
+  const y = Number(h.dividendYield) || 0, dg = Number(h.dividendGrowth) || 0, pg = Number(h.priceGrowth) || 0;
+  const cc = isCoveredCall(h);
+  const lim = (cc ? Math.min(SAFE.trCap, SAFE.ccCap) : SAFE.trCap) + SAFE.haircut;   // 보정 전 상한
+  const out = [];
+  if (y + pg > lim + 1e-9) {
+    out.push({ level: 'warn', chip: '총수익률 과다',
+      text: `배당률 ${r1(y)}% + 주가성장률 ${r1(pg)}% = <b>연 ${r1(y + pg)}%</b>를 ${years}년 내내 가정합니다. 장기 가정으로 보기 어려운 수준(${cc ? '커버드콜 ' : ''}연 ${r1(lim)}% 초과)입니다.` +
+        (cc ? ' 분배율이 기초자산 수익률보다 높으면 그 차이만큼 주가가 빠지는 구조입니다.' : '') });
+  }
+  if (dg > pg + 1e-9 && y > 0) {
+    const ratio = Math.pow((1 + dg / 100) / Math.max(1 + pg / 100, 1e-9), years);
+    out.push({ level: ratio >= SAFE.driftWarn ? 'warn' : 'soft', chip: '배당률 상승 가정',
+      text: `배당성장률 ${r1(dg)}%가 주가성장률 ${r1(pg)}%보다 커서, 시가배당률이 ${r1(y)}%에서 ${years}년 뒤 <b>약 ${r1(y * ratio)}%</b>로 올라가는 가정입니다.` });
+  }
+  return out;
+}
+function renderChecks(years) {
+  let nWarn = 0;
+  holdings.forEach(h => {
+    const el = document.getElementById('chk-' + h.id);
+    if (!el) return;
+    const issues = checkHolding(h, years);
+    if (h.growthSrc === 'safe' && !issues.length) {
+      el.className = 'hcheck ok';
+      el.innerHTML = `<div class="hcheck-row"><span class="hcheck-chip">보정 적용</span><span>주가성장률 ${SAFE.haircut}%p 낮춤 · 총수익률 상한 ${safeValues(h).lim}% · 배당성장률 ≤ 주가성장률</span></div>` +
+        (h.preSafe ? `<div class="hcheck-act"><button type="button" class="meta-btn" data-act="unsafe" data-id="${h.id}">보정 전 값(배당성장 ${h.preSafe.dg}% · 주가성장 ${h.preSafe.pg}%)으로 되돌리기</button></div>` : '');
+      return;
+    }
+    if (!issues.length) { el.className = 'hcheck'; el.innerHTML = ''; return; }
+    const hard = issues.some(x => x.level === 'warn');
+    if (hard) nWarn++;
+    const sv = safeValues(h);
+    el.className = 'hcheck' + (hard ? '' : ' soft');
+    el.innerHTML = issues.map(x => `<div class="hcheck-row"><span class="hcheck-chip">${x.chip}</span><span>${x.text}</span></div>`).join('') +
+      `<div class="hcheck-act"><button type="button" class="meta-btn" data-act="safe" data-id="${h.id}">보정값 적용 → 배당성장 ${sv.dg}% · 주가성장 ${sv.pg}%</button></div>`;
+  });
+  const box = document.getElementById('safe-all');
+  box.classList.toggle('show', nWarn >= 2);
+  document.getElementById('safe-all-msg').textContent = nWarn >= 2 ? `경고 종목 ${nWarn}개` : '';
+}
+function applySafe(h) {
+  const sv = safeValues(h);
+  if (h.growthSrc !== 'safe') h.preSafe = { dg: Number(h.dividendGrowth) || 0, pg: Number(h.priceGrowth) || 0, src: h.growthSrc };
+  h.dividendGrowth = sv.dg; h.priceGrowth = sv.pg; h.growthSrc = 'safe';
+}
+document.getElementById('safe-all-btn').addEventListener('click', () => {
+  const years = readYears(false);
+  holdings.forEach(h => { if (checkHolding(h, years).some(x => x.level === 'warn')) applySafe(h); });
+  renderHoldings(); update();
+});
+
 function metaHtml(h) {
   if (h.key === 'CUSTOM') {
     return `<div class="meta-line">직접 입력 종목 · 배당률·성장률을 직접 넣어주세요</div>`;
@@ -2122,7 +2241,8 @@ function metaHtml(h) {
 
   const td = TYPE_DEFAULTS[it.type];
   let gl = '';
-  if (h.growthSrc === 'preset') gl = `성장률 = 추천 프리셋 값 (가정치)`;
+  if (h.growthSrc === 'safe') gl = `<span>성장률 = <b>보수적 보정값</b> (다른 계산기와 같은 기준)</span>`;
+  else if (h.growthSrc === 'preset') gl = `성장률 = 추천 프리셋 값 (가정치)`;
   else if (h.growthSrc === 'type') gl = `<span>성장률 = <b>‘${td.label}’ 유형 기본값</b> (가정치 · 직접 수정 가능)</span>`;
   else gl = `성장률 직접 입력값 <button type="button" class="meta-btn" data-act="growth" data-id="${h.id}">${presetKey ? '프리셋 값' : '유형 기본값'}으로 되돌리기</button>`;
   html += `<div class="meta-line">${gl}</div>`;
@@ -2210,6 +2330,7 @@ function renderHoldings() {
         </button>
       </div>
       <div class="holding-meta" id="meta-${h.id}">${metaHtml(h)}</div>
+      <div class="hcheck" id="chk-${h.id}"></div>
     `;
     container.appendChild(row);
   });
@@ -2224,7 +2345,7 @@ function renderHoldings() {
   // 검색 콤보
   container.querySelectorAll('.combo-input').forEach(bindCombo);
   // 정보줄 버튼
-  container.querySelectorAll('.holding-meta').forEach(el => el.addEventListener('click', handleMetaAction));
+  container.querySelectorAll('.holding-meta, .hcheck').forEach(el => el.addEventListener('click', handleMetaAction));
   // 삭제
   container.querySelectorAll('[data-remove]').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -2238,6 +2359,7 @@ function renderHoldings() {
   });
 
   placeUnits();
+  renderChecks(readYears(false));
   if (pendingFocusId != null) {
     const el = container.querySelector(`.combo-input[data-id="${pendingFocusId}"]`);
     pendingFocusId = null;
@@ -2329,9 +2451,15 @@ function handleMetaAction(e) {
   const btn = e.target.closest('.meta-btn');
   if (!btn) return;
   const h = holdings.find(x => x.id === Number(btn.dataset.id));
-  const it = h && UNIVERSE.get(h.key);
-  if (!h || !it) return;
+  if (!h) return;
   const act = btn.dataset.act;
+  if (act === 'safe') { applySafe(h); renderHoldings(); update(); return; }
+  if (act === 'unsafe' && h.preSafe) {
+    h.dividendGrowth = h.preSafe.dg; h.priceGrowth = h.preSafe.pg; h.growthSrc = h.preSafe.src || 'manual'; h.preSafe = null;
+    renderHoldings(); update(); return;
+  }
+  const it = UNIVERSE.get(h.key);
+  if (!it) return;
   if (act === 'fwd') { h.dividendYield = Math.round(it.yieldFwd * 100) / 100; h.yieldSrc = 'fwd'; }
   if (act === 'ttm') { h.dividendYield = Math.round(it.yieldTTM * 100) / 100; h.yieldSrc = it.hasDiv ? 'ttm' : 'none'; }
   if (act === 'growth') {
@@ -2359,7 +2487,7 @@ function handleHoldingChange(e) {
       updateWeightTotal();
     }
     if (field === 'dividendYield' && h.key !== 'CUSTOM') { h.yieldSrc = 'manual'; refreshMeta(h); }
-    if ((field === 'dividendGrowth' || field === 'priceGrowth') && h.key !== 'CUSTOM') { h.growthSrc = 'manual'; refreshMeta(h); }
+    if (field === 'dividendGrowth' || field === 'priceGrowth') { h.growthSrc = 'manual'; h.preSafe = null; if (h.key !== 'CUSTOM') refreshMeta(h); }
   }
   update();
 }
@@ -2471,9 +2599,15 @@ function simulate(hs = holdings) {
   if (!(initial > 0 || monthly > 0)) return null; // 투자금 0 → 계산 불가
 
   // 4개 트랙 공통 상태: 재투자 O/X × 세전/세후
+  //  월 단위 · 주식 수 기반 (월배당 적립 계산기와 같은 엔진)
+  //  - 시작 주가 1, 주가(m개월 뒤) = (1+주가성장률)^(m/12)
+  //  - 한 주당 월 배당(m번째 달) = 배당률 ÷ 12 × (1+배당성장률)^((m−1)/12) → 첫 달 배당 = 투자금 × 배당률 ÷ 12
+  //  - 매달 말: 배당 수령(세후 트랙은 종목별 세율 차감) → 재투자 O는 같은 종목 매수, X는 현금 보관 → 그 달 적립금 매수
+  //  - 초기 투자금은 0개월 차에 매수 · 리밸런싱을 켜면 매년 12월 말 처음 비중으로 다시 나눔(비용·세금 없음)
+  const rebalance = document.getElementById('rebalance-toggle').checked;
   const mkState = (h) => ({
     name: getHoldingDisplayName(h),
-    principal: 0, value: 0, cashDividends: 0,
+    principal: 0, value: 0, shares: 0, cashDividends: 0,
     yieldRate: (Number(h.dividendYield) || 0) / 100,
     growth: (Number(h.dividendGrowth) || 0) / 100,
     priceGrowth: (Number(h.priceGrowth) || 0) / 100,
@@ -2485,44 +2619,48 @@ function simulate(hs = holdings) {
   const noReStates = hs.map(mkState);           // 재투자 X (세전)
   const stockStatesAfterTax = hs.map(mkState);  // 재투자 O (세후) - 배당 때마다 종목별 세율 차감 후 재투자
   const noReStatesAfterTax = hs.map(mkState);   // 재투자 X (세후)
-
-  [stockStates, noReStates, stockStatesAfterTax, noReStatesAfterTax].forEach(arr => {
-    arr.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; });
-  });
+  const TRACKS = [
+    [stockStates, { reinvest: true, afterTax: false }],
+    [noReStates, { reinvest: false, afterTax: false }],
+    [stockStatesAfterTax, { reinvest: true, afterTax: true }],
+    [noReStatesAfterTax, { reinvest: false, afterTax: true }],
+  ];
+  TRACKS.forEach(([arr]) => arr.forEach(s => { s.principal = initial * s.weight; s.value = initial * s.weight; s.shares = initial * s.weight; }));
 
   const yearlyData = [];
-  const annualContribution = monthly * 12;
   let realCumDiv = 0, realCumDivAT = 0, realCumTaxAT = 0; // 연도별 배당을 그 해 물가로 할인해 누적
-
-  // 한 해 진행 (모든 트랙 공통)
-  //  - 배당: 연초 보유액 × 그 해 배당률(연초 주가 기준) + 올해 적립분 × 배당률 × 0.5 (월 적립 → 연중 평균 반년 보유 근사)
-  //  - 주가: 연초 보유액 × (1+p) + 올해 적립분 × (1+p)^0.5
-  //  - 배당률(연초 주가 기준) = y × (1+g)^(t-1) / (1+p)^(t-1)  (주당배당은 g, 주가는 p로 성장)
-  //  - 초기 투자금은 0시점에 들어가 1년차 배당·주가상승을 온전히 받음
-  const step = (s, year, mode) => {
-    const pf = Math.max(1 + s.priceGrowth, 0);
-    const pp = Math.pow(pf, year - 1); // 연초 주가 지수
-    const eff = pp > 0 ? s.yieldRate * Math.pow(1 + s.growth, year - 1) / pp : 0;
-    const c = annualContribution * s.weight;
-    s.principal += c;
-    const div = s.value * eff + c * eff * 0.5;
-    s.value = s.value * pf + c * Math.sqrt(pf);
-    const tax = mode.afterTax ? div * s.taxRate : 0;
-    const net = div - tax;
-    s.yearlyDividend = net;
-    s.yearlyTax = tax;
-    s.yearlyTaxableIncome = div * s.taxable; // 금융소득(종합과세 판정용)
-    s.cumulativeDividend += net;
-    s.cumulativeTax += tax;
-    if (mode.reinvest) s.value += net;   // 재투자 O: (세후) 배당을 연말에 같은 종목에 재투자
-    else s.cashDividends += net;         // 재투자 X: 현금으로 보관
-  };
+  const priceAt = (s, m) => Math.pow(Math.max(1 + s.priceGrowth, 0), m / 12);
 
   for (let year = 1; year <= years; year++) {
-    stockStates.forEach(s => step(s, year, { reinvest: true, afterTax: false }));
-    noReStates.forEach(s => step(s, year, { reinvest: false, afterTax: false }));
-    stockStatesAfterTax.forEach(s => step(s, year, { reinvest: true, afterTax: true }));
-    noReStatesAfterTax.forEach(s => step(s, year, { reinvest: false, afterTax: true }));
+    TRACKS.forEach(([arr]) => arr.forEach(s => { s.yearlyDividend = 0; s.yearlyTax = 0; s.yearlyTaxableIncome = 0; }));
+    for (let k = 1; k <= 12; k++) {
+      const m = (year - 1) * 12 + k;
+      TRACKS.forEach(([arr, mode]) => arr.forEach(s => {
+        const price = priceAt(s, m);
+        const dps = s.yieldRate / 12 * Math.pow(Math.max(1 + s.growth, 0), (m - 1) / 12);
+        const div = s.shares * dps;
+        const tax = mode.afterTax ? div * s.taxRate : 0;
+        const net = div - tax;
+        s.yearlyDividend += net;
+        s.yearlyTax += tax;
+        s.yearlyTaxableIncome += div * s.taxable; // 금융소득(종합과세 판정용)
+        s.cumulativeDividend += net;
+        s.cumulativeTax += tax;
+        const c = monthly * s.weight;
+        s.principal += c;
+        const buy = c + (mode.reinvest ? net : 0);
+        if (!mode.reinvest) s.cashDividends += net;
+        if (price > 1e-12) s.shares += buy / price;
+      }));
+    }
+    const m12 = year * 12;
+    TRACKS.forEach(([arr]) => {
+      arr.forEach(s => { s.value = s.shares * priceAt(s, m12); });
+      if (rebalance) {
+        const tot = arr.reduce((a, s) => a + s.value, 0);
+        if (tot > 0) arr.forEach(s => { const pr = priceAt(s, m12); s.shares = pr > 1e-12 ? tot * s.weight / pr : 0; });
+      }
+    });
 
     const sum = (arr, k) => arr.reduce((acc, s) => acc + s[k], 0);
     const totalValue = sum(stockStates, 'value');
@@ -3501,6 +3639,7 @@ function update() {
   document.getElementById('monthly-hint').textContent = '연간 ' + formatKRW(monthly * 12) + '원';
   document.getElementById('years-hint').textContent = years + '년 후 결과';
   placeUnits();   // 보정해 되돌려 쓴 값에 맞춰 단위 위치 갱신
+  renderChecks(years);
 
   const data = simulate();
   const section = document.getElementById('results-section');
@@ -4203,6 +4342,7 @@ function buildShareUrl() {
     m: readNonNeg('monthly'),
     y: readYears(false),
     f: inflOn ? shareRound2(readNonNeg('inflation-rate')) : -1,
+    r: document.getElementById('rebalance-toggle').checked ? 1 : 0,
     h: holdings.map(h => [
       h.key, shareRound1(Math.max(0, Number(h.weight) || 0)),
       shareRound2(h.dividendYield), shareRound2(h.dividendGrowth), shareRound2(h.priceGrowth),
@@ -4239,7 +4379,7 @@ function restoreFromUrl() {
       h.dividendYield = dy;
       if (ys === 'manual') h.yieldSrc = 'manual';
       else { h.yieldSrc = 'preset'; if (ys === 'fwd') h.wantFwd = true; }   // 'preset' → 데이터 로드 후 최신 배당률로 갱신
-      if (gs === 'manual') { h.dividendGrowth = dg; h.priceGrowth = pg; h.growthSrc = 'manual'; }
+      if (gs === 'manual' || gs === 'safe') { h.dividendGrowth = dg; h.priceGrowth = pg; h.growthSrc = gs; }
       else if (h.growthSrc == null) { h.dividendGrowth = dg; h.priceGrowth = pg; h.growthSrc = 'type'; }
     }
     hs.push(h);
@@ -4255,6 +4395,7 @@ function restoreFromUrl() {
   tg.checked = fv >= 0;
   if (fv >= 0) document.getElementById('inflation-rate').value = String(fv);
   document.getElementById('inflation-input-wrap').style.display = tg.checked ? 'flex' : 'none';
+  document.getElementById('rebalance-toggle').checked = num(st.r, 0) === 1;
   return true;
 }
 
@@ -4298,6 +4439,7 @@ document.getElementById('inflation-toggle').addEventListener('change', (e) => {
   update();
 });
 document.getElementById('inflation-rate').addEventListener('input', update);
+document.getElementById('rebalance-toggle').addEventListener('change', update);
 
 // 초기화
 document.getElementById('growth-guide-body').innerHTML = Object.values(TYPE_DEFAULTS)
