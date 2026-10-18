@@ -2578,7 +2578,7 @@ function readYears(writeBack) {
   const raw = String(el.value ?? '');
   const n = Number(raw);
   const y = Math.max(1, Math.min(50, Math.round(raw !== '' && isFinite(n) ? n : 1)));
-  if (writeBack && raw !== '' && n !== y) el.value = String(y);
+  if (writeBack && raw !== '' && raw !== String(y)) el.value = String(y);   // '05'·'7.0'도 '5'·'7'로 정리
   return y;
 }
 function readNonNeg(id, writeBack) {
@@ -3636,11 +3636,14 @@ function renderResults(data) {
 // ============================================================
 // 메인 업데이트
 // ============================================================
-function update() {
-  const initial = readNonNeg('initial', true);
-  const monthly = readNonNeg('monthly', true);
-  const years = readYears(true);   // 1~50 정수로 보정한 값을 입력칸에도 되돌려 써서 라벨과 맞춤
-  readNonNeg('inflation-rate', true);
+function update(commit) {
+  // 치는 도중(input)에는 보정값으로 계산만 하고, 입력을 마쳤을 때(change: 칸을 벗어나거나 Enter)만 칸에 되돌려 쓴다
+  // — 치는 중에 되돌려 쓰면 '0.5'가 '1'로, '05'가 '5'로 바뀌어 원하는 숫자를 칠 수 없다
+  const wb = commit === true;
+  const initial = readNonNeg('initial', wb);
+  const monthly = readNonNeg('monthly', wb);
+  const years = readYears(wb);   // 1~50 정수로 보정 (입력을 마치면 칸에도 되돌려 써서 라벨과 맞춤)
+  readNonNeg('inflation-rate', wb);
 
   document.getElementById('initial-hint').textContent = formatKRW(initial) + '원';
   document.getElementById('monthly-hint').textContent = '연간 ' + formatKRW(monthly * 12) + '원';
@@ -4437,7 +4440,9 @@ async function shareLink(btn) {
 
 // 입력 이벤트
 ['initial', 'monthly', 'years'].forEach(id => {
-  document.getElementById(id).addEventListener('input', update);
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => update());
+  el.addEventListener('change', () => update(true));
 });
 
 // 물가상승률 토글
@@ -4446,7 +4451,8 @@ document.getElementById('inflation-toggle').addEventListener('change', (e) => {
   wrap.style.display = e.target.checked ? 'flex' : 'none';
   update();
 });
-document.getElementById('inflation-rate').addEventListener('input', update);
+document.getElementById('inflation-rate').addEventListener('input', () => update());
+document.getElementById('inflation-rate').addEventListener('change', () => update(true));
 document.getElementById('rebalance-toggle').addEventListener('change', update);
 
 // 초기화
