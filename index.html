@@ -1158,7 +1158,7 @@
       </div>
       <div>
         <label class="label">투자 기간</label>
-        <span class="unit-wrap"><input type="number" id="years" data-unit="년" value="20" min="1" max="50"></span>
+        <span class="unit-wrap"><input type="number" id="years" data-unit="년" value="20" min="1" max="50" step="1" inputmode="numeric"></span>
         <div class="input-hint" id="years-hint">20년 후 결과</div>
       </div>
     </div>
@@ -1268,7 +1268,7 @@
       <div class="stat-card">
         <div class="stat-label" id="card2-label">20년 후 자산 (재투자 X)</div>
         <div class="stat-value" id="card2-value" style="color: var(--brown);">-</div>
-        <div class="stat-sub">총 자산 (배당 받아둠)</div>
+        <div class="stat-sub" id="card2-sub">총 자산 (배당 받아둠)</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">재투자 효과 (차이)</div>
@@ -1379,6 +1379,7 @@
     <div class="card">
       <div class="chart-title">연차별 Raw Data <span style="color: var(--accent); font-weight: 800;">(세전)</span> · 재투자 효과 비교</div>
       <div class="chart-subtitle">숫자로 보면 복리가 언제부터 폭발하는지 정확히 보입니다 (가로 스크롤)</div>
+      <div class="chart-subtitle real-cum-note" style="display:none; margin-top:-4px;">※ 누적 배당의 <b>실질 합계</b>(재투자 O)는 해마다 받은 배당을 그 해 물가로 할인해 더한 값이고, <b>실질 잔액</b>(재투자 X)은 현금으로 모아 둔 배당을 마지막 해 물가로 할인한 오늘 가치입니다. 재투자 X의 실질 잔액은 같은 줄 실질 총 자산에 그대로 들어 있습니다.</div>
       <div class="dl-bar">
         <button type="button" class="dl-btn" id="dl-csv">CSV 내려받기</button>
         <button type="button" class="dl-btn" id="dl-xlsx">엑셀(.xlsx) 내려받기</button>
@@ -1417,6 +1418,7 @@
         · 국내상장 ETF: 분배금 중 <b>과세표준액에만 15.4%</b> (최근 12개월 실제 과표 비율 적용 · 국내 커버드콜 옵션프리미엄 등 비과세분 제외 · 과표 자료가 없으면 전액 15.4%)<br>
         <strong style="color: var(--accent);">절세계좌(ISA·연금저축·IRP)</strong>를 활용하면 이 차이를 크게 줄일 수 있습니다.
       </div>
+      <div class="chart-subtitle real-cum-note" style="display:none; margin-top:-4px;">※ 누적 배당의 <b>실질 합계</b>(재투자 O)는 해마다 받은 배당을 그 해 물가로 할인해 더한 값이고, <b>실질 잔액</b>(재투자 X)은 현금으로 모아 둔 배당을 마지막 해 물가로 할인한 오늘 가치입니다. 재투자 X의 실질 잔액은 같은 줄 실질 총 자산에 그대로 들어 있습니다.</div>
       <div class="reinvest-line notax-line" id="notax-line"></div>
       <div id="tax-note" class="tax-note" style="display:none; margin: 10px 0 4px; padding: 12px 14px; border-radius: 10px; background: #FDF1EC; border: 1px solid #F0C4B0; color: #7A2E14; font-size: 14px; line-height: 1.6;"></div>
       <div class="table-wrap">
@@ -2370,7 +2372,9 @@ function renderHoldings() {
 function updateWeightTotal() {
   const total = Math.round(holdings.reduce((s, x) => s + Math.max(0, Number(x.weight) || 0), 0) * 100) / 100;
   document.getElementById('weight-total').textContent = total + '%';
-  document.getElementById('weight-warn').style.display = total === 100 ? 'none' : 'inline';
+  const warnEl = document.getElementById('weight-warn');
+  warnEl.style.display = total === 100 ? 'none' : 'inline';
+  warnEl.textContent = total > 0 ? '(100%로 맞춰주세요 · 지금은 입력한 비율대로 나눠 계산 중)' : '(100%로 맞춰주세요)';
   document.getElementById('weight-total').style.color = total === 100 ? 'var(--accent)' : '#C44';
 }
 
@@ -2764,6 +2768,7 @@ function simulate(hs = holdings) {
     finalMonthlyDividend: finalYear.monthlyDividend,
     cumulativeDividend: finalYear.cumulativeDividend,
     noReinvestTotal: finalYear.noReinvestTotal,
+    noReinvestCash: finalYear.noReinvestCash,
     noReinvestMonthlyDiv: finalYear.noReinvestMonthlyDiv,
     reinvestGap: finalYear.reinvestGap,
     reinvestGapPercent: pct(finalYear.totalValue, finalYear.noReinvestTotal),
@@ -3409,12 +3414,14 @@ function renderResults(data) {
   const inflOn = data.inflationOn;
 
   // === 명목가치 카드 (세전) - 항상 표시 ===
+  document.querySelectorAll('.real-cum-note').forEach(el => { el.style.display = inflOn ? 'block' : 'none'; });
   document.getElementById('card1-label').textContent = `${years}년 후 자산 (재투자 O)`;
   document.getElementById('card1-value').textContent = formatKRW(s.finalValue);
   document.getElementById('card1-sub').textContent = `원금의 ${s.multiplier}배`;
 
   document.getElementById('card2-label').textContent = `${years}년 후 자산 (재투자 X)`;
   document.getElementById('card2-value').textContent = formatKRW(s.noReinvestTotal);
+  document.getElementById('card2-sub').textContent = `주식 ${formatKRW(s.noReinvestTotal - s.noReinvestCash)}원 + 받아 둔 배당 ${formatKRW(s.noReinvestCash)}원`;
 
   document.getElementById('card3-value').textContent = formatKRWSigned(s.reinvestGap);
   const gapPctTxt = Number(s.reinvestGapPercent) < 0 ? `${Math.abs(s.reinvestGapPercent).toFixed(1)}% 더 적음` : `${s.reinvestGapPercent}% 더 많음`;
@@ -3491,7 +3498,7 @@ function renderResults(data) {
         </td>
         <td class="col-reinvest">
           ${formatKRWTable(row.cumulativeDividend)}
-          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realCumulativeDividend)}</div>
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 합계 ${formatKRWTable(row.realCumulativeDividend)}</div>
         </td>
         <td class="col-no-reinvest-emph">
           ${formatKRWTable(row.noReinvestTotal)}
@@ -3503,7 +3510,7 @@ function renderResults(data) {
         </td>
         <td class="col-no-reinvest">
           ${formatKRWTable(row.noReinvestCash)}
-          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestCash)}</div>
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 잔액 ${formatKRWTable(row.realNoReinvestCash)}</div>
         </td>
         <td class="col-gap">
           ${formatKRWSigned(row.reinvestGap)}
@@ -3572,7 +3579,7 @@ function renderResults(data) {
         </td>
         <td class="col-reinvest">
           ${formatKRWTable(row.cumulativeDividendAT)}
-          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realCumulativeDividendAT)}</div>
+          <div style="font-size: 10px; color: #A03D1F; font-weight: 700; margin-top: 2px;">실질 합계 ${formatKRWTable(row.realCumulativeDividendAT)}</div>
         </td>
         <td class="col-no-reinvest-emph">
           ${formatKRWTable(row.noReinvestTotalAT)}
@@ -3584,7 +3591,7 @@ function renderResults(data) {
         </td>
         <td class="col-no-reinvest">
           ${formatKRWTable(row.noReinvestCashAT)}
-          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 ${formatKRWTable(row.realNoReinvestCashAT)}</div>
+          <div style="font-size: 10px; color: #5A4A3D; font-weight: 700; margin-top: 2px;">실질 잔액 ${formatKRWTable(row.realNoReinvestCashAT)}</div>
         </td>
         <td class="col-gap">
           ${formatKRWSigned(row.reinvestGapAT)}
@@ -3774,6 +3781,7 @@ function wiRefresh() {
     ['연배당', a.yearlyDividendAT, b.yearlyDividendAT, '세후'],
     ['월배당금', a.monthlyDividendAT, b.monthlyDividendAT, '세후'],
     ['총 자산', a.totalValue, b.totalValue, '세전'],
+    ['총 자산', a.totalValueAT, b.totalValueAT, '세후'],
   ];
   document.getElementById('wi-body').innerHTML = rows.map(([k, x, y, t]) => {
     const d = y - x;
