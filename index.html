@@ -1182,7 +1182,7 @@
       </div>
       <div class="inflation-input-wrap" id="inflation-input-wrap" style="display: flex;">
         <label class="label" style="margin-bottom: 0;">물가상승률 (연, %)</label>
-        <span class="unit-wrap" style="width: 100%; max-width: 200px;"><input type="number" id="inflation-rate" data-unit="%" value="2.5" step="0.1" min="0" max="20"></span>
+        <span class="unit-wrap" style="width: 100%; max-width: 200px;"><input type="number" id="inflation-rate" data-unit="%" value="2.5" step="0.1" min="0" max="20"></span> <!-- rules-ok: 물가 가정 기본값(제도 아님) -->
         <div class="input-hint" style="margin-top: 0;">한국 장기 평균 약 2.5%</div>
       </div>
     </div>
@@ -4145,7 +4145,7 @@ function drawShareChart(ctx, x0, y0, w, h, data, F) {
     { label: '재투자 X', vals: rows.map(r => r.noReinvestTotal), color: '#8B6F47', width: 4 },
   ];
   if (data.inflationOn) series.push({ label: '재투자 O · 실질', vals: rows.map(r => r.realTotalValue), color: '#A03D1F', width: 3.5, dash: [14, 8] });
-  series.push({ label: '누적 원금', vals: rows.map(r => r.totalPrincipal), color: '#9B9387', width: 2.5, dash: [6, 6] });
+  series.push({ label: '누적 원금', vals: rows.map(r => r.totalPrincipal), color: '#9B9387', width: 2.5, dash: [6, 6] }); // rules-ok: 차트 선 굵기
 
   const maxV = Math.max(1, ...series.flatMap(s => s.vals));
   const step = shareNiceStep(maxV / 5);
