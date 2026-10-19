@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>배당 재투자 계산기 · 똑재TV</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<script src="https://ttokjaetv.github.io/rules/v2026.1/rules.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- 공용 프리셋 (못 불러오면 아래 내장 값 사용) -->
 <script src="https://ttokjaetv.github.io/portfolio-sheet-data/data/presets.js"></script>
@@ -1546,6 +1547,16 @@
 </div>
 
 <script>
+if (!window.TTOKJAE_RULES) {
+  var TJR_MSG = '기준값 파일(rules.js)을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.';
+  var tjrShow = function () { document.body.insertAdjacentHTML('afterbegin', '<div role="alert" style="background:#fdecea;color:#b3261e;padding:12px 16px;text-align:center;font-weight:600">' + TJR_MSG + '</div>'); };
+  document.body ? tjrShow() : document.addEventListener('DOMContentLoaded', tjrShow);
+  throw new Error(TJR_MSG);
+}
+// 공용 제도 상수(rules.js). 세율 % 글자·만원 글자는 아래 두 함수로 만든다
+const TR = TTOKJAE_RULES;
+const trPct = r => String(+(r * 100).toFixed(4));          // 0.154 → '15.4'
+const trMan = v => (v / 1e4).toLocaleString('ko-KR');      // 20000000 → '2,000'
 // ============== 표 내려받기 (CSV · 엑셀 .xlsx) — 외부 라이브러리 없이 동작 ==============
 // TJX.csv('파일이름', rows) · TJX.xlsx('파일이름', [{ name: '시트', rows, widths }])
 // rows = [[머리글...], [값...], ...]  숫자는 숫자 그대로 넣으면 엑셀에서 계산 가능한 숫자 칸이 됩니다
@@ -1859,15 +1870,15 @@ async function loadTaxBaseRatio() {
 //  - 미국 직투: 미국 원천징수 15%로 종결 (국내 추가 없음)
 //  - 국내 개별주: 15.4%
 //  - 국내상장 ETF: 과세표준액에만 15.4% → 15.4% × 과세 비율 (과표 데이터 없으면 전액 15.4%)
-const TAX_KR = 0.154, TAX_US = 0.15;
+const TAX_KR = TR.FIN_INCOME.withholdingWithLocal, TAX_US = TR.FIN_INCOME.usWithholding;
 function holdingTax(h) {
-  if (h.key && h.key.startsWith('US:')) return { rate: TAX_US, taxable: 1, label: '미국 원천징수 15%' };
+  if (h.key && h.key.startsWith('US:')) return { rate: TAX_US, taxable: 1, label: `미국 원천징수 ${trPct(TAX_US)}%` };
   const it = UNIVERSE.get(h.key);
   if (it && it.kind === '국내ETF') {
-    if (it.taxRatio != null) return { rate: TAX_KR * it.taxRatio, taxable: it.taxRatio, label: `과표 비율 ${Math.round(it.taxRatio * 100)}% × 15.4%` };
-    return { rate: TAX_KR, taxable: 1, label: '15.4% (과표 미확인 · 전액 과세로 가정)' };
+    if (it.taxRatio != null) return { rate: TAX_KR * it.taxRatio, taxable: it.taxRatio, label: `과표 비율 ${Math.round(it.taxRatio * 100)}% × ${trPct(TAX_KR)}%` };
+    return { rate: TAX_KR, taxable: 1, label: `${trPct(TAX_KR)}% (과표 미확인 · 전액 과세로 가정)` };
   }
-  return { rate: TAX_KR, taxable: 1, label: '배당소득세 15.4%' };
+  return { rate: TAX_KR, taxable: 1, label: `배당소득세 ${trPct(TAX_KR)}%` };
 }
 
 async function loadUS() {
@@ -3536,17 +3547,17 @@ function renderResults(data) {
   // 금융소득종합과세 안내 (재투자 O 세후 트랙의 과세 대상 배당 기준)
   const taxNote = document.getElementById('tax-note');
   if (taxNote) {
-    const over = data.yearlyData.find(r => r.taxableIncomeAT > 20000000);
-    const over1k = data.yearlyData.find(r => r.taxableIncomeAT > 10000000);   // 건보료: 이자·배당 연 1,000만원 초과 시 전액 반영
+    const over = data.yearlyData.find(r => r.taxableIncomeAT > TR.FIN_INCOME.threshold);
+    const over1k = data.yearlyData.find(r => r.taxableIncomeAT > TR.NHIS.finIncomeThreshold);   // 건보료: 이자·배당 연 1,000만원 초과 시 전액 반영
     const manTxt = r => (r.taxableIncomeAT / 10000).toLocaleString(undefined, { maximumFractionDigits: 0 });
-    const hiLine = `건보료 계산에서 이자·배당은 연 1,000만원 이하면 빠지지만, 넘으면 넘는 부분만이 아니라 <b>전액</b>이 소득으로 잡힙니다. 직장가입자의 피부양자라면 그 금액이 소득요건(다른 소득과 합쳐 연 2,000만원 이하)에 그대로 들어갑니다. <span style="opacity:0.8;">(근거: 국민건강보험법 시행규칙 제44조 제1항·별표 1의2, 2026-10-12 확인)</span>`;
+    const hiLine = `건보료 계산에서 이자·배당은 연 ${trMan(TR.NHIS.finIncomeThreshold)}만원 이하면 빠지지만, 넘으면 넘는 부분만이 아니라 <b>전액</b>이 소득으로 잡힙니다. 직장가입자의 피부양자라면 그 금액이 소득요건(다른 소득과 합쳐 연 ${trMan(TR.NHIS.dependent.income)}만원 이하)에 그대로 들어갑니다. <span style="opacity:0.8;">(근거: 국민건강보험법 시행규칙 제44조 제1항·별표 1의2, 2026-10-12 확인)</span>`;
     const link = `<a href="https://ttokjaetv.github.io/fin-income-tax/" target="_blank" rel="noopener">금융소득종합과세·건보료 계산기</a>`;
     if (over) {
-      taxNote.innerHTML = `⚠️ <b>${over.year}년차</b>부터 과세 대상 배당이 연 <b>${manTxt(over)}만원</b>으로 2,000만원을 넘습니다. 넘는 부분은 다른 소득과 합산해 <b>금융소득종합과세</b>(6.6~49.5%)가 되고 건보료에도 영향이 있어, 실제 세금은 이 표보다 많아질 수 있습니다. 다른 이자·배당 소득도 합산되니 함께 확인하세요.`
-        + `<br>${over1k && over1k.year < over.year ? `1,000만원은 그보다 먼저 <b>${over1k.year}년차</b>에 넘습니다. ` : ''}${hiLine}`
+      taxNote.innerHTML = `⚠️ <b>${over.year}년차</b>부터 과세 대상 배당이 연 <b>${manTxt(over)}만원</b>으로 ${trMan(TR.FIN_INCOME.threshold)}만원을 넘습니다. 넘는 부분은 다른 소득과 합산해 <b>금융소득종합과세</b>(${trPct(TR.INCOME_TAX.brackets[0][1] * (1 + TR.INCOME_TAX.local))}~${trPct(TR.INCOME_TAX.brackets[TR.INCOME_TAX.brackets.length - 1][1] * (1 + TR.INCOME_TAX.local))}%)가 되고 건보료에도 영향이 있어, 실제 세금은 이 표보다 많아질 수 있습니다. 다른 이자·배당 소득도 합산되니 함께 확인하세요.`
+        + `<br>${over1k && over1k.year < over.year ? `${trMan(TR.NHIS.finIncomeThreshold)}만원은 그보다 먼저 <b>${over1k.year}년차</b>에 넘습니다. ` : ''}${hiLine}`
         + `<br>→ 세금·건보료가 얼마나 늘어나는지는 ${link}로 확인해 보세요.`;
     } else if (over1k) {
-      taxNote.innerHTML = `ℹ️ <b>${over1k.year}년차</b>부터 과세 대상 배당이 연 <b>${manTxt(over1k)}만원</b>으로 1,000만원을 넘습니다. ${hiLine}`
+      taxNote.innerHTML = `ℹ️ <b>${over1k.year}년차</b>부터 과세 대상 배당이 연 <b>${manTxt(over1k)}만원</b>으로 ${trMan(TR.NHIS.finIncomeThreshold)}만원을 넘습니다. ${hiLine}`
         + `<br>→ 건보료 영향은 ${link}로 확인해 보세요.`;
     } else taxNote.innerHTML = '';
     taxNote.style.display = (over || over1k) ? 'block' : 'none';
