@@ -3989,7 +3989,19 @@ const isCoarsePointer = () => !!(window.matchMedia && window.matchMedia('(pointe
 function reinvestLineHtml(s, years) {
   const gap = Number(s.reinvestGap) || 0;
   if (Math.abs(gap) < 10000) {
-    return `이 조합은 배당이 거의 없어 <b>재투자 효과가 크지 않습니다</b>. 배당이 나오는 종목을 섞으면 차이가 생깁니다.`;
+    // 차이가 1만원 미만인 원인을 나눠 설명: 배당 없음 / 받은 배당 자체가 작음 / 주가 하락 가정이 재투자 몫을 깎음 / 기간이 짧거나 금액이 작음
+    const cash = Number(s.noReinvestCash) || 0;   // 재투자 X에서 받아 둔 배당 합계(세전)
+    const decline = holdings.some(h => Number(h.weight) > 0 && Number(h.priceGrowth) < 0);   // 주가성장률을 마이너스로 둔 종목이 있음
+    if (Math.round(cash) === 0) {
+      return `이 조합은 배당이 없어 <b>재투자할 돈이 생기지 않습니다</b>. 배당이 나오는 종목을 섞으면 차이가 생깁니다.`;
+    }
+    if (cash < 10000) {
+      return `${years}년 동안 받는 배당이 ${formatKRW(cash)}원뿐이라 <b>재투자 효과가 크지 않습니다</b>. 배당이 더 나오는 종목을 섞거나 기간·금액을 늘리면 차이가 생깁니다.`;
+    }
+    if (gap < 0 || decline) {   // 주가가 내려가면 재투자한 주식이 받아 둔 현금만큼도 안 불어날 수 있다
+      return `${years}년 동안 받는 배당 ${formatKRW(cash)}원을 다시 사 모아도 주가가 내려가는 가정이라 재투자한 몫이 함께 줄어, 현금으로 받아 두는 것과 <b>차이가 1만원이 안 됩니다</b>.`;
+    }
+    return `${years}년 동안 받는 배당 ${formatKRW(cash)}원을 다시 사 모아도 더 불어나는 몫이 1만원이 안 돼 <b>재투자 효과가 아직 크지 않습니다</b>. 기간이 짧거나 금액이 작으면 이렇게 됩니다.`;
   }
   if (gap < 0) {
     return `이 조건에선 주가 하락 가정이 배당보다 커서, 배당을 현금으로 받아 두는 쪽이 <b>${formatKRW(-gap)}원</b> 더 많습니다.`;
@@ -4015,7 +4027,11 @@ function noTaxLineHtml(data) {
   const f = data.yearlyData[data.yearlyData.length - 1], years = data.years;
   const tv = f.totalValue, tvAT = f.totalValueAT, gap = tv - tvAT;
   if (!(gap >= 10000)) {
-    return `이 조합은 배당이 거의 없어 일반계좌 배당세로 줄어드는 금액이 크지 않습니다.`;
+    // 원인을 나눠 설명: 배당 없음 / 뗀 세금 자체가 작음(기간·금액·세율) / 세금은 1만원 넘게 뗐지만 주가 하락 가정으로 그 몫도 줄어듦
+    const div = Number(f.cumulativeDividend) || 0, tax = Number(f.cumulativeTaxAT) || 0;
+    if (Math.round(div) === 0) return `이 조합은 배당이 없어 일반계좌 배당세로 줄어드는 금액이 없습니다.`;
+    if (tax < 10000) return `${years}년 동안 받는 배당이 ${formatKRW(div)}원, 떼는 배당세가 ${formatKRW(tax)}원뿐이라 일반계좌 배당세로 줄어드는 금액이 1만원이 안 됩니다.`;
+    return `${years}년 동안 배당세 ${formatKRW(tax)}원을 떼지만, 주가가 내려가는 가정이라 그 돈을 재투자했어도 함께 줄어 세전·세후 자산 차이는 1만원이 안 됩니다.`;
   }
   const pct = (tv > 0 ? gap / tv * 100 : 0).toFixed(1);
   return `배당세가 없었다면(ISA·연금저축처럼 과세가 미뤄지는 계좌 가정) ${years}년 뒤 자산은 <b>${formatKRW(tv)}원</b>입니다. `
